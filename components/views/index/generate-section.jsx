@@ -87,7 +87,6 @@ const GenerateSection = () => {
 
   const getAPIKEY = () => {
     const savedApiKey = localStorage.getItem("apikey");
-    console.log(savedApiKey);
     return savedApiKey || process.env.API_KEY;
   };
 
