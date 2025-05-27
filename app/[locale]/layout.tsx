@@ -9,9 +9,6 @@ import { routing } from "@/i18n/routing";
 import { Metadata } from "next";
 import config from "@/config";
 import { Analytics } from "@vercel/analytics/react";
-import BaseData from "@/data/base_data";
-import GoodsData from "@/data/goods_data";
-import InitUserData from "@/data/user_data";
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
@@ -39,16 +36,7 @@ export const metadata: Metadata = {
     title: config.Title,
     description: config.Description,
   },
-  keywords: [
-    "GrsAI",
-    "Grs AI",
-    "Grs AI API",
-    "Grs AI API Key",
-    "gpt4o image",
-    "4o image",
-    "4o",
-    "gpt4o",
-  ],
+  keywords: ["gpt4o image", "4o image", "4o", "gpt4o"],
   robots: "index, follow",
   alternates: {
     canonical: config.WebUrl,
@@ -89,6 +77,7 @@ export default async function LocaleLayout({
             <NextIntlClientProvider>{children}</NextIntlClientProvider>
           </div>
         </ThemeProvider>
+        <Analytics />
       </body>
     </html>
   );
