@@ -342,7 +342,7 @@ const GenerateSection = () => {
       <div className="relative z-11 mt-2 m-auto">
         <div className="flex backdrop-blur-[5px] gap-2 sm:gap-3 md:gap-4 rounded-2xl flex-col lg:flex-row w-full backdrop-filter">
           <div className="w-full border border-primary/30 min-w-[300px] p-2 sm:p-3 md:p-4 bg-popover/50 rounded-lg shadow-sm lg:flex-[5]">
-            <Tasks tasks={tasks} />
+            <Tasks tasks={tasks} setTasks={setTasks} />
           </div>
           <div className="w-full flex flex-col border border-primary/30 p-2 sm:p-3 md:p-4 bg-popover/50 rounded-lg shadow-sm mb-3 lg:mb-0 lg:flex-[4]">
             <ChatSection

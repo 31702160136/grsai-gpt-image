@@ -9,7 +9,7 @@ const LOCAL_STORAGE_KEY = "savedTasks";
 // 最大保存任务数
 const MAX_SAVED_TASKS = 50;
 
-const Tasks = ({ tasks }) => {
+const Tasks = ({ tasks, setTasks }) => {
   const [images, setImages] = useState(tasks);
   const [loading, setLoading] = useState(true);
   const [previewImage, setPreviewImage] = useState(null);
@@ -195,6 +195,7 @@ const Tasks = ({ tasks }) => {
     try {
       localStorage.removeItem(LOCAL_STORAGE_KEY);
       setImages([]);
+      setTasks([]);
       console.log("已清除所有本地存储的任务");
     } catch (error) {
       console.error("清除本地存储失败:", error);
