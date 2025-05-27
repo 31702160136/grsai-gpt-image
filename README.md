@@ -19,7 +19,7 @@ npm run dev
 
 第一步,获取APIKEY
 
-打开: https://grsai.com
+打开: <a title="grsai">https://grsai.com</a>
 
 第二步
 
