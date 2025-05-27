@@ -1,0 +1,170 @@
+@import "tailwindcss";
+
+@plugin "tailwindcss-animate";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+}
+
+:root {
+  --radius: 0.625rem;
+  --background: #f0f8ff;
+  --foreground: #1a365d;
+  --card: #ffffff;
+  --card-foreground: #2c5282;
+  --popover: #ffffff;
+  --popover-foreground: #2c5282;
+  --primary: #3182ce;
+  --primary-foreground: #ffffff;
+  --secondary: #e6f0fb;
+  --secondary-foreground: #2c5282;
+  --muted: #e2e8f0;
+  --muted-foreground: #4a5568;
+  --accent: #bee3f8;
+  --accent-foreground: #2c5282;
+  --destructive: #e53e3e;
+  --border: #cbd5e0;
+  --input: #edf2f7;
+  --ring: #3182ce;
+  --chart-1: #3182ce;
+  --chart-2: #4299e1;
+  --chart-3: #63b3ed;
+  --chart-4: #90cdf4;
+  --chart-5: #bee3f8;
+  --sidebar: #ffffff;
+  --sidebar-foreground: #2c5282;
+  --sidebar-primary: #3182ce;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #e6f0fb;
+  --sidebar-accent-foreground: #2c5282;
+  --sidebar-border: #cbd5e0;
+  --sidebar-ring: #3182ce;
+}
+
+.dark {
+  --background: #1a365d;
+  --foreground: #e2e8f0;
+  --card: #2c5282;
+  --card-foreground: #e2e8f0;
+  --popover: #2c5282;
+  --popover-foreground: #e2e8f0;
+  --primary: #4299e1;
+  --primary-foreground: #ffffff;
+  --secondary: #2a4365;
+  --secondary-foreground: #e2e8f0;
+  --muted: #2a4365;
+  --muted-foreground: #a0aec0;
+  --accent: #2a4365;
+  --accent-foreground: #e2e8f0;
+  --destructive: #f56565;
+  --border: #2a4365;
+  --input: #1a365d;
+  --ring: #4299e1;
+  --chart-1: #4299e1;
+  --chart-2: #63b3ed;
+  --chart-3: #90cdf4;
+  --chart-4: #bee3f8;
+  --chart-5: #ebf8ff;
+  --sidebar: #2c5282;
+  --sidebar-foreground: #e2e8f0;
+  --sidebar-primary: #4299e1;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #2a4365;
+  --sidebar-accent-foreground: #e2e8f0;
+  --sidebar-border: #2a4365;
+  --sidebar-ring: #4299e1;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+/* 所有字体使用幼圆 */
+* {
+  font-family: "Source Han Sans CN" !important;
+}
+
+/* Custom scrollbar styles */
+.scrollbar-thin::-webkit-scrollbar {
+  width: 5px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  border-radius: 5px;
+}
+
+.scrollbar-thumb-slate-300::-webkit-scrollbar-thumb {
+  background-color: #cbd5e0;
+}
+
+.scrollbar-thumb-slate-400::-webkit-scrollbar-thumb {
+  background-color: #a0aec0;
+}
+
+.dark .dark\:scrollbar-thumb-slate-600::-webkit-scrollbar-thumb {
+  background-color: #4a5568;
+}
+
+.dark .dark\:scrollbar-thumb-slate-500::-webkit-scrollbar-thumb {
+  background-color: #718096;
+}
+
+/* Firefox scrollbar */
+.scrollbar-thin {
+  scrollbar-width: thin;
+}
+
+.scrollbar-thumb-slate-300 {
+  scrollbar-color: #cbd5e0 transparent;
+}
+
+.dark .dark\:scrollbar-thumb-slate-600 {
+  scrollbar-color: #4a5568 transparent;
+}
