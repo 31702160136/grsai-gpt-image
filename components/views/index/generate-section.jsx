@@ -8,15 +8,7 @@ const GenerateSection = () => {
   const [uploading, setUploading] = useState(false);
   const [isGenerate, setIsGenerate] = useState(false);
   const [drawData, setDrawData] = useState({
-    prompt: `把我的图片转化为一个可爱的卡通Q版（Chibi）潮玩盲盒形象。根据原图内容设计玩偶造型，确保其保留原有特征的同时更加萌趣、灵动。  
-如果是人物，优化为Q版比例，添加适当配饰或道具以增强趣味性。
-如果是动物或其他物体，赋予其拟人化特征，保持整体和谐可爱。
-玩偶材质呈现树脂/软胶质感，表面细节精致，光影效果写实且柔和，展现出高级玩具工艺感。
-为该玩偶设计配套的正方形盲盒包装盒：  
-包装盒材质为纸质卡盒，颜色和图案与玩偶主题相呼应，形成统一视觉风格。比例和卡通形象一样大。
-盒面印有深色系玩偶插画（对比鲜明），以及自定义品牌Logo（如"GrsAi"字样或其他创意名称）。
-配合一个小吉祥物图标（可自由选择形状，比如水果、蔬菜、动物等），增添趣味性和辨识度。
-整体风格柔和、暖色调为主，背景简洁中性，突出玩偶与包装盒的精致展示效果，仿佛置身于专业商品摄影棚中。`,
+    prompt: ``,
     size: "auto",
     variants: 1,
     model: "sora-image",
