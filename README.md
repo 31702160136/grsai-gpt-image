@@ -1,7 +1,7 @@
 
 这是一个使用gpt4o image批量绘画的开源软件
 
-使用在线版本：https://image.grsai.com
+使用在线版本：<a title="gpt4o image">https://image.grsai.com</a>
 
 或
 
