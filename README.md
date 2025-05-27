@@ -15,6 +15,10 @@ npm install
 npm run dev
 ```
 
+这里推荐一个稳定便宜的GPT Image API网站 https://grsai.com
+
+官网价格1张图成本在 1元左右，而 grsai 一张图只需要0.02元，价格便宜50倍
+
 使用方式
 
 第一步,获取APIKEY
