@@ -95,7 +95,10 @@ const GenerateSection = () => {
     if (isGenerate) {
       return;
     }
-
+    if (!getAPIKEY()) {
+      alert("请先设置APIKEY");
+      return;
+    }
     setIsGenerate(true);
     try {
       const res = await fetch(
