@@ -1,5 +1,7 @@
 
-这是一个使用gpt4o image批量绘画的开源软件
+这是一个NextJS项目
+
+这是一个使用gpt4o image批量绘画的开源软件，支持批量图片下载
 
 使用在线版本：<a title="gpt4o image">https://image.grsai.com</a>
 
