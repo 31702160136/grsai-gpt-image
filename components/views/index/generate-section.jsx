@@ -13,30 +13,9 @@ const GenerateSection = () => {
     variants: 1,
     model: "sora-image",
     urls: [],
+    cdn: "zh",
+    webHook: "-1",
   });
-
-  // // 生成随机图片数据
-  // const generateRandomImages = () => {
-  //   const imageCount = 1; // 显示12张图片
-  //   const newImages = [];
-
-  //   for (let i = 0; i < imageCount; i++) {
-  //     const width = 200 + Math.floor(Math.random() * 100); // 200-300px宽度
-  //     const height = 200 + Math.floor(Math.random() * 100); // 200-300px高度
-  //     newImages.push({
-  //       id: i + 1,
-  //       src: `https://picsum.photos/${width}/${height}?random=${i + 1}`,
-  //       alt: `Random Image ${i + 1}`,
-  //       loaded: false,
-  //       finish: false,
-  //       progress: 0,
-  //       failureReason: "",
-  //       error: "",
-  //     });
-  //   }
-
-  //   return newImages;
-  // };
 
   const handleImageUpload = async (e) => {
     // 限制上传图片数量
@@ -116,13 +95,28 @@ const GenerateSection = () => {
       if (!res.ok) {
         throw new Error(`HTTP error! status: ${res.status}`);
       }
-
-      if (res.body) {
-        await processStream(res.body);
-      } else {
-        const data = await res.json();
-        console.log("Received data:", data);
+      const data = await res.json();
+      if (data.code !== 0) {
+        alert(data.msg);
+        return;
       }
+      const taskId = data.data.id;
+
+      const newTask = {
+        id: taskId,
+        finish: false,
+        loaded: false,
+        failureReason: "",
+        error: "",
+        progress: 0,
+        src: "",
+        alt: `Generated Image ${taskId}`,
+      };
+
+      // Add new task to the beginning of the tasks array
+      setTasks((prevTasks) => [newTask, ...prevTasks]);
+
+      handleTask(taskId);
     } catch (error) {
       setIsGenerate(false);
       console.error("Error generating image:", error);
@@ -287,7 +281,7 @@ const GenerateSection = () => {
             return task;
           })
         );
-        await new Promise((resolve) => setTimeout(resolve, 3000));
+        await new Promise((resolve) => setTimeout(resolve, 5000));
         continue;
       }
       if (data.status === "succeeded") {
