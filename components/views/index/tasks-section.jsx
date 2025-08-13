@@ -604,7 +604,7 @@ const Tasks = ({ tasks, setTasks }) => {
               />
             </svg>
             <p>
-              图片有效期为10小时，请尽快下载。最多存储 {MAX_SAVED_TASKS}{" "}
+              图片有效期为2小时，请尽快下载。最多存储 {MAX_SAVED_TASKS}{" "}
               个任务，超出限制时将自动删除最旧的任务。
             </p>
           </div>
