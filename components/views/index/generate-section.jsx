@@ -86,7 +86,6 @@ const GenerateSection = () => {
           headers: {
             "Content-Type": "application/json",
             Authorization: "Bearer " + getAPIKEY(),
-            "User-Agent": "ComfyUI",
           },
           body: JSON.stringify(drawData),
           cache: "no-store",
@@ -237,6 +236,25 @@ const GenerateSection = () => {
     }
   }
 
+  function getCNZUrl(url) {
+    let result = url.replace(/https:\/\//g, ""); // g 标志表示全局替换所有匹配项
+    result = result.replace(/http:\/\//g, "");
+
+    // 提取最后一个.之后的字符串
+    const lastDotIndex = result.lastIndexOf(".");
+    let suffix = "";
+    if (lastDotIndex !== -1) {
+      suffix = result.substring(lastDotIndex + 1);
+      result = result.substring(0, lastDotIndex);
+    }
+
+    result = result.replace(/\./g, "_d_");
+    result = result.replace(/\//g, "_x_");
+    result = result + "." + suffix;
+
+    return "https://grsai-file2.dakka.com.cn/cnzfile/" + result;
+  }
+
   async function handleTask(id) {
     while (true) {
       const res = await fetch(`https://grsai.dakka.com.cn/v1/draw/result`, {
@@ -272,7 +290,6 @@ const GenerateSection = () => {
         break;
       }
       const data = result.data;
-      console.log(data);
       if (data.status === "running") {
         setTasks((prev) =>
           prev.map((task) => {
@@ -293,7 +310,7 @@ const GenerateSection = () => {
                 ...task,
                 progress: data.progress,
                 finish: true,
-                src: data.results[0].url,
+                src: getCNZUrl(data.results[0].url),
               };
             }
             return task;
