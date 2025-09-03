@@ -86,6 +86,7 @@ const GenerateSection = () => {
           headers: {
             "Content-Type": "application/json",
             Authorization: "Bearer " + getAPIKEY(),
+            "User-Agent": "ComfyUI",
           },
           body: JSON.stringify(drawData),
           cache: "no-store",
