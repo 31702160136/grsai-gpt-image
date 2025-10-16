@@ -1,8 +1,53 @@
 "use client";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useState, useEffect } from "react";
 import "./chat-section.css";
+
+// Model size support mapping
+const MODEL_SIZE_MAP = {
+  "sora-image": ["auto", "1:1", "2:3", "3:2"],
+  "nano-banana-fast": [
+    "auto",
+    "1:1",
+    "3:4",
+    "4:3",
+    "9:16",
+    "16:9",
+    "2:3",
+    "3:2",
+    "4:5",
+    "5:4",
+    "21:9",
+  ],
+  "nano-banana": [
+    "auto",
+    "1:1",
+    "3:4",
+    "4:3",
+    "9:16",
+    "16:9",
+    "2:3",
+    "3:2",
+    "4:5",
+    "5:4",
+    "21:9",
+  ],
+  "veo3.1-fast": ["16:9", "9:16"],
+  "veo3.1-pro": ["16:9", "9:16"],
+  "sora-2": ["16:9", "9:16"],
+};
+
+// 视频模型列表
+const VIDEO_MODELS = ["veo3.1-fast", "veo3.1-pro", "sora-2"];
+
 const Home = ({
   drawData,
   setDrawData,
@@ -11,6 +56,76 @@ const Home = ({
   isGenerate,
 }) => {
   const [uploading, setUploading] = useState(false);
+
+  // 判断当前模型是否为视频模型
+  const isVideoModel = VIDEO_MODELS.includes(drawData.model);
+
+  // Get available sizes for the current model
+  const getAvailableSizes = (model) => {
+    return MODEL_SIZE_MAP[model] || ["auto"];
+  };
+
+  // Handle model change and update size if needed
+  const handleModelChange = (newModel) => {
+    const availableSizes = getAvailableSizes(newModel);
+    const currentSize = drawData.size;
+
+    // If current size is not available for the new model, use the first available size
+    const newSize = availableSizes.includes(currentSize)
+      ? currentSize
+      : availableSizes[0];
+
+    setDrawData({ ...drawData, model: newModel, size: newSize });
+  };
+
+  // Render size icon based on aspect ratio
+  const renderSizeIcon = (size) => {
+    if (size === "auto") {
+      return (
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="20"
+          height="20"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <polyline points="16 17 21 12 16 7" />
+          <polyline points="8 7 3 12 8 17" />
+          <line x1="10" x2="14" y1="12" y2="12" />
+        </svg>
+      );
+    }
+
+    // Calculate width and height based on aspect ratio
+    const [width, height] = size.split(":").map(Number);
+    const maxSize = 20;
+    const ratio = width / height;
+
+    let boxWidth, boxHeight;
+    if (ratio > 1) {
+      boxWidth = maxSize;
+      boxHeight = maxSize / ratio;
+    } else {
+      boxHeight = maxSize;
+      boxWidth = maxSize * ratio;
+    }
+
+    return (
+      <div
+        className="border-[1.5px] border-solid border-current bg-transparent"
+        style={{
+          width: `${boxWidth}px`,
+          height: `${boxHeight}px`,
+          minWidth: `${boxWidth}px`,
+          minHeight: `${boxHeight}px`,
+        }}
+      ></div>
+    );
+  };
 
   return (
     <>
@@ -196,84 +311,103 @@ const Home = ({
                 d="M13 10V3L4 14h7v7l9-11h-7z"
               />
             </svg>
-            <span>上传图像进行编辑或输入指令以生成新图像</span>
+            <span>
+              {isVideoModel
+                ? "输入指令以生成视频"
+                : "上传图像进行编辑或输入指令以生成新图像"}
+            </span>
           </div>
         </div>
       </div>
       {/* Seed Input */}
       <div className="mb-6">
-        <div className="flex items-center justify-center mb-3">
-          <div className="flex space-x-2">
-            {/* 尺寸 */}
-            {["auto", "2:3", "3:2", "1:1"].map((size) => (
-              <button
-                key={size}
-                onClick={() => setDrawData({ ...drawData, size: size })}
-                style={{
-                  borderWidth: drawData.size === size ? "2px" : "1px",
-                  borderStyle: "solid",
-                  borderColor:
-                    drawData.size === size ? "var(--primary)" : "var(--border)",
-                  backgroundColor:
-                    drawData.size === size
-                      ? "rgba(var(--primary-rgb), 0.1)"
-                      : "var(--input)",
-                  color:
-                    drawData.size === size
-                      ? "var(--primary)"
-                      : "var(--muted-foreground)",
-                  borderRadius: "6px",
-                  padding: "8px",
-                  width: "60px",
-                  height: "60px",
-                  display: "flex",
-                  flexDirection: "column",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  transition: "all 0.3s ease",
-                }}
-                className="text-sm cursor-pointer"
-              >
-                <div className="flex flex-col items-center gap-1">
-                  <div className="relative flex items-center justify-center w-[20px] h-[20px]">
-                    {size === "auto" ? (
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        width="20"
-                        height="20"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      >
-                        <polyline points="16 17 21 12 16 7" />
-                        <polyline points="8 7 3 12 8 17" />
-                        <line x1="10" x2="14" y1="12" y2="12" />
-                      </svg>
-                    ) : size === "2:3" ? (
-                      <div
-                        className="w-[13.33px] h-[20px] border-[1.5px] border-solid border-current bg-transparent"
-                        style={{ minWidth: "13.33px", minHeight: "20px" }}
-                      ></div>
-                    ) : size === "3:2" ? (
-                      <div
-                        className="w-[20px] h-[13.33px] border-[1.5px] border-solid border-current bg-transparent"
-                        style={{ minWidth: "20px", minHeight: "13.33px" }}
-                      ></div>
-                    ) : (
-                      <div
-                        className="w-[20px] h-[20px] border-[1.5px] border-solid border-current bg-transparent"
-                        style={{ minWidth: "20px", minHeight: "20px" }}
-                      ></div>
-                    )}
-                  </div>
-                  <span>{size}</span>
-                </div>
-              </button>
-            ))}
+        <div className="mb-3">
+          <div className="text-sm font-medium mb-2 text-foreground">
+            模型选项
           </div>
+          <Select value={drawData.model} onValueChange={handleModelChange}>
+            <SelectTrigger className="w-full h-11 bg-input border-primary/50">
+              <SelectValue>
+                <div className="flex items-center gap-2">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="20"
+                    height="20"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <circle cx="12" cy="12" r="3" />
+                    <path d="M12 1v6m0 6v6m9-9h-6m-6 0H3" />
+                  </svg>
+                  <span>{drawData.model}</span>
+                </div>
+              </SelectValue>
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="sora-image">
+                <div className="flex items-center gap-2">
+                  <span>sora-image</span>
+                </div>
+              </SelectItem>
+              <SelectItem value="nano-banana-fast">
+                <div className="flex items-center gap-2">
+                  <span>nano-banana-fast</span>
+                </div>
+              </SelectItem>
+              <SelectItem value="nano-banana">
+                <div className="flex items-center gap-2">
+                  <span>nano-banana</span>
+                </div>
+              </SelectItem>
+              <SelectItem value="sora-2">
+                <div className="flex items-center gap-2">
+                  <span>sora-2</span>
+                </div>
+              </SelectItem>
+              <SelectItem value="veo3.1-fast">
+                <div className="flex items-center gap-2">
+                  <span>veo3.1-fast</span>
+                </div>
+              </SelectItem>
+              <SelectItem value="veo3.1-pro">
+                <div className="flex items-center gap-2">
+                  <span>veo3.1-pro</span>
+                </div>
+              </SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="mb-3">
+          <div className="text-sm font-medium mb-2 text-foreground">
+            尺寸选项
+          </div>
+          <Select
+            value={drawData.size}
+            onValueChange={(value) => setDrawData({ ...drawData, size: value })}
+          >
+            <SelectTrigger className="w-full h-11 bg-input border-primary/50">
+              <SelectValue>
+                <div className="flex items-center gap-2">
+                  {renderSizeIcon(drawData.size)}
+                  <span>{drawData.size}</span>
+                </div>
+              </SelectValue>
+            </SelectTrigger>
+            <SelectContent>
+              {getAvailableSizes(drawData.model).map((size) => (
+                <SelectItem key={size} value={size}>
+                  <div className="flex items-center gap-2">
+                    {renderSizeIcon(size)}
+                    <span>{size}</span>
+                  </div>
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
         <Textarea
           placeholder="Tell us how you want to edit the image"
@@ -317,6 +451,8 @@ const Home = ({
             </svg>
             <span>生成中...</span>
           </div>
+        ) : isVideoModel ? (
+          "生成视频"
         ) : (
           "生成图像"
         )}

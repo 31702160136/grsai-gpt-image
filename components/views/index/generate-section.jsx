@@ -69,6 +69,20 @@ const GenerateSection = () => {
     return savedApiKey || process.env.API_KEY;
   };
 
+  const getAPIEndpoint = (model) => {
+    const endpointMap = {
+      "sora-image": "https://grsai.dakka.com.cn/v1/draw/completions",
+      "nano-banana-fast": "https://grsai.dakka.com.cn/v1/draw/nano-banana",
+      "nano-banana": "https://grsai.dakka.com.cn/v1/draw/nano-banana",
+      "veo3.1-fast": "https://grsai.dakka.com.cn/v1/video/veo",
+      "veo3.1-pro": "https://grsai.dakka.com.cn/v1/video/veo",
+      "sora-2": "https://grsai.dakka.com.cn/v1/video/sora-video",
+    };
+    return (
+      endpointMap[model] || "https://grsai.dakka.com.cn/v1/draw/completions"
+    );
+  };
+
   async function onGenerate() {
     if (isGenerate) {
       return;
@@ -79,18 +93,40 @@ const GenerateSection = () => {
     }
     setIsGenerate(true);
     try {
-      const res = await fetch(
-        "https://grsai.dakka.com.cn/v1/draw/completions",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: "Bearer " + getAPIKEY(),
-          },
-          body: JSON.stringify(drawData),
-          cache: "no-store",
-        }
-      );
+      const apiEndpoint = getAPIEndpoint(drawData.model);
+
+      // 根据模型类型转换尺寸参数
+      // 只有sora-image使用size参数，其他模型使用aspectRatio参数
+      const requestData = { ...drawData };
+      if (drawData.model === "sora-image") {
+        // sora-image使用size参数
+        requestData.size = drawData.size;
+      } else {
+        // 其他模型使用aspectRatio参数
+        requestData.aspectRatio = drawData.size;
+        // 删除size参数
+        delete requestData.size;
+      }
+
+      if (drawData.model.indexOf("veo") !== -1 && drawData.urls.length > 0) {
+        requestData.firstFrameUrl = drawData.urls[0];
+        delete requestData.urls;
+      }
+
+      if (drawData.model.indexOf("sora-2") !== -1 && drawData.urls.length > 0) {
+        requestData.url = drawData.urls[0];
+        delete requestData.urls;
+      }
+
+      const res = await fetch(apiEndpoint, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: "Bearer " + getAPIKEY(),
+        },
+        body: JSON.stringify(requestData),
+        cache: "no-store",
+      });
       setIsGenerate(false);
       if (!res.ok) {
         throw new Error(`HTTP error! status: ${res.status}`);
@@ -111,6 +147,7 @@ const GenerateSection = () => {
         progress: 0,
         src: "",
         alt: `Generated Image ${taskId}`,
+        model: drawData.model, // Save model to determine if it's a video or image
       };
 
       // Add new task to the beginning of the tasks array
@@ -122,100 +159,6 @@ const GenerateSection = () => {
       console.error("Error generating image:", error);
     } finally {
       setIsGenerate(false);
-    }
-  }
-
-  async function processStream(stream) {
-    const reader = stream.getReader();
-    let done = false;
-    let taskIdCreated = null;
-
-    while (!done) {
-      const { value, done: readerDone } = await reader.read();
-      done = readerDone;
-
-      if (value) {
-        try {
-          // Convert the Uint8Array to a string
-          const chunk = new TextDecoder().decode(value);
-          const lines = chunk.split("\n").filter((line) => line.trim() !== "");
-
-          for (const line of lines) {
-            if (line.startsWith("data:")) {
-              const data = line.substring(5).trim();
-              if (data === "[DONE]") {
-                done = true;
-                break;
-              }
-
-              try {
-                const parsedData = JSON.parse(data);
-                const taskId = parsedData.id;
-
-                // Check if this is a new task or an existing one
-                if (taskId === taskIdCreated) {
-                  // Update existing task
-                  setTasks((prevTasks) => {
-                    return prevTasks.map((task) => {
-                      if (task.id === taskId) {
-                        // Create a new task object with updated properties
-                        return {
-                          ...task,
-                          progress: parsedData.progress,
-                          finish: parsedData.status !== "running",
-                          failureReason:
-                            parsedData.failure_reason || task.failureReason,
-                          error: parsedData.error || task.error,
-                          src:
-                            parsedData.status === "succeeded"
-                              ? parsedData.results[0].url
-                              : task.src,
-                        };
-                      }
-                      // Return other tasks unchanged
-                      return task;
-                    });
-                  });
-                } else if (!taskIdCreated) {
-                  // This is the first update for a new task
-                  taskIdCreated = taskId;
-
-                  // Create new task with initial data
-                  const newTask = {
-                    id: taskId,
-                    finish: parsedData.status !== "running",
-                    loaded: false,
-                    failureReason: parsedData.failure_reason || "",
-                    error: parsedData.error || "",
-                    progress: parsedData.progress || 0,
-                    src:
-                      parsedData.status === "succeeded"
-                        ? parsedData.results[0].url
-                        : "",
-                    alt: `Generated Image ${taskId}`,
-                  };
-
-                  // Add new task to the beginning of the tasks array
-                  setTasks((prevTasks) => [newTask, ...prevTasks]);
-                }
-              } catch (e) {
-                console.error("Error parsing JSON:", e);
-                setIsGenerate(false);
-              }
-            } else {
-              try {
-                const parsedData = JSON.parse(line);
-                alert(parsedData.msg);
-              } catch (e) {
-                console.error("Error parsing non-data line:", e);
-              }
-            }
-          }
-        } catch (error) {
-          console.error("Error processing stream:", error);
-          setIsGenerate(false);
-        }
-      }
     }
   }
 
@@ -303,6 +246,14 @@ const GenerateSection = () => {
         continue;
       }
       if (data.status === "succeeded") {
+        let resultUrl = "";
+        if (data.results && data.results.length > 0) {
+          resultUrl = getCNZUrl(data.results[0].url);
+        } else if (data.url) {
+          resultUrl = getCNZUrl(data.url);
+        } else {
+          resultUrl = "";
+        }
         setTasks((prev) =>
           prev.map((task) => {
             if (task.id === id) {
@@ -310,7 +261,7 @@ const GenerateSection = () => {
                 ...task,
                 progress: data.progress,
                 finish: true,
-                src: getCNZUrl(data.results[0].url),
+                src: resultUrl,
               };
             }
             return task;

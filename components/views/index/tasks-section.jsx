@@ -9,6 +9,14 @@ const LOCAL_STORAGE_KEY = "savedTasks";
 // 最大保存任务数
 const MAX_SAVED_TASKS = 200;
 
+// 视频模型列表
+const VIDEO_MODELS = ["veo3.1-fast", "veo3.1-pro", "sora-2"];
+
+// 判断是否为视频模型
+const isVideoModel = (model) => {
+  return VIDEO_MODELS.includes(model);
+};
+
 const Tasks = ({ tasks, setTasks }) => {
   const [images, setImages] = useState(tasks);
   const [loading, setLoading] = useState(true);
@@ -52,6 +60,7 @@ const Tasks = ({ tasks, setTasks }) => {
       id: task.id,
       src: task.src,
       alt: task.alt,
+      model: task.model, // 保存模型信息以便判断是视频还是图片
       // 只保留必要的数据，不存储临时状态
       // 例如加载状态、错误状态、进度等会在加载时重新设置
     }));
@@ -237,7 +246,7 @@ const Tasks = ({ tasks, setTasks }) => {
     setSelectionMode((prev) => !prev);
   };
 
-  // 下载单张图片
+  // 下载单张图片或视频
   const downloadImage = async (imageUrl, filename) => {
     try {
       const response = await fetch(imageUrl);
@@ -261,6 +270,14 @@ const Tasks = ({ tasks, setTasks }) => {
           contentTypeExtension = "webp";
         } else if (contentType.includes("image/svg+xml")) {
           contentTypeExtension = "svg";
+        } else if (contentType.includes("video/mp4")) {
+          contentTypeExtension = "mp4";
+        } else if (contentType.includes("video/webm")) {
+          contentTypeExtension = "webm";
+        } else if (contentType.includes("video/")) {
+          // 其他视频类型，从Content-Type中提取
+          const match = contentType.match(/video\/([a-z0-9]+)/i);
+          contentTypeExtension = match ? match[1] : "mp4";
         } else if (contentType.includes("image/")) {
           // 其他图片类型，从Content-Type中提取
           const match = contentType.match(/image\/([a-z]+)/i);
@@ -271,9 +288,17 @@ const Tasks = ({ tasks, setTasks }) => {
         if (
           !fileExtension ||
           (contentTypeExtension &&
-            !["jpg", "jpeg", "png", "gif", "webp", "svg"].includes(
-              fileExtension.toLowerCase()
-            ))
+            ![
+              "jpg",
+              "jpeg",
+              "png",
+              "gif",
+              "webp",
+              "svg",
+              "mp4",
+              "webm",
+              "mov",
+            ].includes(fileExtension.toLowerCase()))
         ) {
           // 移除任何现有扩展名并添加新的
           const nameWithoutExt = filename.replace(/\.[^/.]+$/, "");
@@ -283,7 +308,7 @@ const Tasks = ({ tasks, setTasks }) => {
 
       return { blob, filename };
     } catch (error) {
-      console.error("下载图片失败:", error);
+      console.error("下载文件失败:", error);
       return null;
     }
   };
@@ -310,11 +335,14 @@ const Tasks = ({ tasks, setTasks }) => {
           // 如果alt属性存在，使用它作为基础文件名
           filename = image.alt;
           // 确保文件名有扩展名
-          if (!filename.match(/\.(jpg|jpeg|png|gif|webp|svg)$/i)) {
+          if (!filename.match(/\.(jpg|jpeg|png|gif|webp|svg|mp4|webm|mov)$/i)) {
             // 尝试从URL中提取扩展名
             const urlExtMatch = image.src.match(/\.([^./?#]+)($|\?|#)/i);
+            const isVideo = isVideoModel(image.model);
             const extension = urlExtMatch
               ? urlExtMatch[1].toLowerCase()
+              : isVideo
+              ? "mp4"
               : "png";
             filename = `${filename}.${extension}`;
           }
@@ -324,12 +352,18 @@ const Tasks = ({ tasks, setTasks }) => {
           if (urlFilenameMatch) {
             filename = urlFilenameMatch[1];
             // 确保文件名有扩展名
-            if (!filename.match(/\.(jpg|jpeg|png|gif|webp|svg)$/i)) {
-              filename = `${filename}.png`;
+            if (
+              !filename.match(/\.(jpg|jpeg|png|gif|webp|svg|mp4|webm|mov)$/i)
+            ) {
+              const isVideo = isVideoModel(image.model);
+              filename = `${filename}.${isVideo ? "mp4" : "png"}`;
             }
           } else {
             // 使用默认文件名
-            filename = `image-${index + 1}.png`;
+            const isVideo = isVideoModel(image.model);
+            filename = `${isVideo ? "video" : "image"}-${index + 1}.${
+              isVideo ? "mp4" : "png"
+            }`;
           }
         }
 
@@ -391,9 +425,11 @@ const Tasks = ({ tasks, setTasks }) => {
     );
   }
 
-  // 图片预览模态框组件
+  // 图片/视频预览模态框组件
   const ImagePreviewModal = () => {
     if (!previewImage) return null;
+
+    const isVideo = isVideoModel(previewImage.model);
 
     return (
       <div
@@ -415,11 +451,23 @@ const Tasks = ({ tasks, setTasks }) => {
             className="relative max-w-4xl"
             onClick={(e) => e.stopPropagation()}
           >
-            <img
-              src={previewImage.src}
-              alt={previewImage.alt}
-              className="max-w-full max-h-[90vh] object-contain rounded-lg shadow-2xl"
-            />
+            {isVideo ? (
+              <video
+                src={previewImage.src}
+                controls
+                autoPlay
+                loop
+                className="max-w-full max-h-[90vh] object-contain rounded-lg shadow-2xl"
+              >
+                您的浏览器不支持视频播放
+              </video>
+            ) : (
+              <img
+                src={previewImage.src}
+                alt={previewImage.alt}
+                className="max-w-full max-h-[90vh] object-contain rounded-lg shadow-2xl"
+              />
+            )}
           </div>
         </div>
       </div>
@@ -444,7 +492,7 @@ const Tasks = ({ tasks, setTasks }) => {
       >
         <div className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-md w-full">
           <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">
-            正在下载图片...
+            正在打包下载...
           </h3>
           <div className="w-full bg-gray-200 rounded-full h-4 dark:bg-gray-700 mb-4">
             <div
@@ -474,10 +522,10 @@ const Tasks = ({ tasks, setTasks }) => {
           </svg>
         </div>
         <h3 className="text-xl font-semibold text-gray-800 dark:text-white mb-2">
-          暂无生成的图片
+          暂无生成的内容
         </h3>
         <p className="text-gray-600 dark:text-gray-400 text-center max-w-md mb-8">
-          您还没有生成任何图片。请使用右边的生成工具创建您的第一张AI图片。
+          您还没有生成任何图片或视频。请使用右边的生成工具创建您的第一个AI内容。
         </p>
       </div>
     );
@@ -550,7 +598,7 @@ const Tasks = ({ tasks, setTasks }) => {
           {selectionMode && (
             <div className="flex items-center gap-2">
               <span className="text-sm font-medium">
-                已选择 {selectedImages.length} 张图片
+                已选择 {selectedImages.length} 个文件
               </span>
               <button
                 onClick={downloadSelectedImages}
@@ -561,7 +609,7 @@ const Tasks = ({ tasks, setTasks }) => {
                     : "bg-green-500 text-white hover:bg-green-600"
                 }`}
               >
-                下载选中图片
+                下载选中内容
               </button>
             </div>
           )}
@@ -583,7 +631,7 @@ const Tasks = ({ tasks, setTasks }) => {
               />
             </svg>
             <p>
-              点击图片可以选择或取消选择。选择完成后，点击"下载选中图片"按钮可将所选图片打包下载为ZIP压缩包文件。
+              点击内容可以选择或取消选择。选择完成后，点击"下载选中内容"按钮可将所选内容（图片/视频）打包下载为ZIP压缩包文件。
             </p>
           </div>
         </div>
@@ -604,8 +652,8 @@ const Tasks = ({ tasks, setTasks }) => {
               />
             </svg>
             <p>
-              图片有效期为2小时，请尽快下载。最多存储 {MAX_SAVED_TASKS}{" "}
-              个任务，超出限制时将自动删除最旧的任务。
+              内容有效期为2小时，请尽快下载。最多存储 {MAX_SAVED_TASKS}{" "}
+              个任务，超出限制时将自动删除最旧的任务。点击缩略图可预览完整内容。
             </p>
           </div>
         </div>
@@ -642,17 +690,29 @@ const Tasks = ({ tasks, setTasks }) => {
                     : ""
                 }`}
               >
-                {/* 图片容器 - 固定宽高比 */}
+                {/* 图片/视频容器 - 固定宽高比 */}
                 <div className="relative aspect-square bg-gray-100 dark:bg-gray-800">
                   {!image.error && image.src ? (
-                    <img
-                      src={image.src}
-                      alt={image.alt}
-                      className={`cursor-pointer w-full h-full object-cover transition-opacity duration-300`}
-                      onLoad={() => handleImageLoad(index)}
-                      onError={() => handleImageError(index)}
-                      loading="lazy"
-                    />
+                    isVideoModel(image.model) ? (
+                      <video
+                        src={image.src}
+                        className={`cursor-pointer w-full h-full object-cover transition-opacity duration-300`}
+                        onLoadedData={() => handleImageLoad(index)}
+                        onError={() => handleImageError(index)}
+                        preload="metadata"
+                        muted
+                        playsInline
+                      />
+                    ) : (
+                      <img
+                        src={image.src}
+                        alt={image.alt}
+                        className={`cursor-pointer w-full h-full object-cover transition-opacity duration-300`}
+                        onLoad={() => handleImageLoad(index)}
+                        onError={() => handleImageError(index)}
+                        loading="lazy"
+                      />
+                    )
                   ) : (
                     <div className="w-full h-full flex flex-col items-center justify-center text-gray-400 p-4">
                       <svg
@@ -703,6 +763,24 @@ const Tasks = ({ tasks, setTasks }) => {
                       )}
                     </div>
                   )}
+
+                  {/* 视频播放图标指示器 */}
+                  {isVideoModel(image.model) &&
+                    image.src &&
+                    !image.error &&
+                    !selectionMode && (
+                      <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                        <div className="bg-black/50 rounded-full p-3 backdrop-blur-sm">
+                          <svg
+                            className="w-8 h-8 text-white"
+                            fill="currentColor"
+                            viewBox="0 0 20 20"
+                          >
+                            <path d="M6.3 2.841A1.5 1.5 0 004 4.11V15.89a1.5 1.5 0 002.3 1.269l9.344-5.89a1.5 1.5 0 000-2.538L6.3 2.84z" />
+                          </svg>
+                        </div>
+                      </div>
+                    )}
 
                   {/* 选择指示器 - 确保在所有图片上显示 */}
                   {selectionMode && (
