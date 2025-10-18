@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, memo, useCallback, useMemo } from "react";
 import { createPortal } from "react-dom";
 import JSZip from "jszip";
 import { saveAs } from "file-saver";
@@ -16,6 +16,310 @@ const VIDEO_MODELS = ["veo3.1-fast", "veo3.1-pro", "sora-2"];
 const isVideoModel = (model) => {
   return VIDEO_MODELS.includes(model);
 };
+
+// 单个任务项组件 - 使用memo优化，避免不必要的重新渲染
+const TaskItem = memo(
+  ({
+    image,
+    index,
+    selectionMode,
+    selectedImages,
+    onImageLoad,
+    onImageError,
+    onToggleSelection,
+    onOpenPreview,
+    getErrorMessage,
+  }) => {
+    return (
+      <div
+        key={image.id}
+        className={`group relative ${selectionMode ? "cursor-pointer" : ""}`}
+        style={{
+          animation: `fadeInUp 0.6s ease-out ${index * 100}ms forwards`,
+        }}
+        onClick={(e) => {
+          if (selectionMode) {
+            e.stopPropagation();
+            onToggleSelection(image.id);
+          } else {
+            onOpenPreview(image);
+          }
+        }}
+      >
+        <div
+          className={`relative overflow-hidden rounded-lg shadow-md hover:shadow-xl transition-all duration-300 transform hover:scale-105 ${
+            selectionMode && selectedImages.includes(image.id)
+              ? "ring-4 ring-blue-500 ring-opacity-70"
+              : ""
+          }`}
+        >
+          {/* 图片/视频容器 - 固定宽高比 */}
+          <div className="relative aspect-square bg-gray-100 dark:bg-gray-800">
+            {!image.error && image.src ? (
+              isVideoModel(image.model) ? (
+                <video
+                  key={`video-${image.id}`}
+                  src={image.src}
+                  className={`cursor-pointer w-full h-full object-cover transition-opacity duration-300`}
+                  onLoadedData={() => onImageLoad(index)}
+                  onError={() => onImageError(index)}
+                  preload="metadata"
+                  muted
+                  playsInline
+                />
+              ) : (
+                <img
+                  src={image.src}
+                  alt={image.alt}
+                  className={`cursor-pointer w-full h-full object-cover transition-opacity duration-300`}
+                  onLoad={() => onImageLoad(index)}
+                  onError={() => onImageError(index)}
+                  loading="lazy"
+                />
+              )
+            ) : (
+              <div className="w-full h-full flex flex-col items-center justify-center text-gray-400 p-4">
+                <svg
+                  className="w-8 h-8 mb-2"
+                  fill="currentColor"
+                  viewBox="0 0 20 20"
+                >
+                  <path
+                    fillRule="evenodd"
+                    d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z"
+                    clipRule="evenodd"
+                  />
+                </svg>
+                <span className="text-xs text-center text-gray-500 dark:text-gray-400">
+                  {getErrorMessage(image)}
+                </span>
+              </div>
+            )}
+
+            {/* 加载指示器 */}
+            {!image.loaded && !image.error && !image.finish && (
+              <div className="absolute bottom-0 left-0 right-0 flex flex-col items-center justify-center bg-white/70 dark:bg-black/70 p-2 pointer-events-none">
+                {image.progress > 0 ? (
+                  /* 进度条 */
+                  <div className="w-full">
+                    <div className="flex justify-between mb-1">
+                      <span className="text-xs font-medium text-gray-700 dark:text-gray-300">
+                        进度
+                      </span>
+                      <span className="text-xs font-medium text-gray-700 dark:text-gray-300">
+                        {Math.round(image.progress)}%
+                      </span>
+                    </div>
+                    <div className="w-full bg-gray-200 rounded-full h-2.5 dark:bg-gray-700">
+                      <div
+                        className="bg-blue-600 h-2.5 rounded-full transition-all duration-300"
+                        style={{
+                          width: `${Math.min(
+                            100,
+                            Math.max(0, image.progress)
+                          )}%`,
+                        }}
+                      ></div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+                )}
+              </div>
+            )}
+
+            {/* 视频播放图标指示器 */}
+            {isVideoModel(image.model) &&
+              image.src &&
+              !image.error &&
+              !selectionMode && (
+                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                  <div className="bg-black/50 rounded-full p-3 backdrop-blur-sm">
+                    <svg
+                      className="w-8 h-8 text-white"
+                      fill="currentColor"
+                      viewBox="0 0 20 20"
+                    >
+                      <path d="M6.3 2.841A1.5 1.5 0 004 4.11V15.89a1.5 1.5 0 002.3 1.269l9.344-5.89a1.5 1.5 0 000-2.538L6.3 2.84z" />
+                    </svg>
+                  </div>
+                </div>
+              )}
+
+            {/* 选择指示器 - 确保在所有图片上显示 */}
+            {selectionMode && (
+              <div className="absolute top-2 right-2 z-10 pointer-events-none">
+                <div
+                  className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-colors ${
+                    selectedImages.includes(image.id)
+                      ? "bg-blue-500 border-blue-500"
+                      : "bg-white/70 border-gray-400"
+                  }`}
+                >
+                  {selectedImages.includes(image.id) && (
+                    <svg
+                      className="w-4 h-4 text-white"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M5 13l4 4L19 7"
+                      />
+                    </svg>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  },
+  (prevProps, nextProps) => {
+    // 自定义比较函数：只在这些属性变化时才重新渲染
+    return (
+      prevProps.image.id === nextProps.image.id &&
+      prevProps.image.src === nextProps.image.src &&
+      prevProps.image.loaded === nextProps.image.loaded &&
+      prevProps.image.error === nextProps.image.error &&
+      prevProps.image.progress === nextProps.image.progress &&
+      prevProps.image.finish === nextProps.image.finish &&
+      prevProps.selectionMode === nextProps.selectionMode &&
+      prevProps.selectedImages.includes(prevProps.image.id) ===
+        nextProps.selectedImages.includes(nextProps.image.id)
+    );
+  }
+);
+
+TaskItem.displayName = "TaskItem";
+
+// 图片/视频预览模态框组件 - 使用memo优化，避免父组件更新时重新渲染
+const ImagePreviewModal = memo(
+  ({ previewImage, onClose }) => {
+    if (!previewImage) return null;
+
+    const isVideo = isVideoModel(previewImage.model);
+
+    // 视频加载完成后尝试播放
+    const handleVideoLoad = useCallback((e) => {
+      const video = e.target;
+      // 尝试播放视频
+      const playPromise = video.play();
+
+      if (playPromise !== undefined) {
+        playPromise.catch((error) => {
+          console.log("自动播放被阻止，用户需要手动播放:", error);
+          // 自动播放失败不需要特殊处理，用户可以通过controls手动播放
+        });
+      }
+    }, []);
+
+    return (
+      <div
+        className="fixed inset-0 w-full h-full"
+        style={{
+          position: "fixed",
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          zIndex: 99999,
+          overflow: "hidden",
+          backgroundColor: "rgba(0, 0, 0, 0.85)",
+        }}
+        onClick={onClose}
+      >
+        <div className="absolute inset-0 flex items-center justify-center">
+          <div
+            className="relative max-w-4xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {isVideo ? (
+              <video
+                key={`preview-video-${previewImage.id}`}
+                src={previewImage.src}
+                controls
+                autoPlay
+                loop
+                playsInline
+                muted={false}
+                onLoadedData={handleVideoLoad}
+                className="max-w-full max-h-[90vh] object-contain rounded-lg shadow-2xl"
+              >
+                您的浏览器不支持视频播放
+              </video>
+            ) : (
+              <img
+                src={previewImage.src}
+                alt={previewImage.alt}
+                className="max-w-full max-h-[90vh] object-contain rounded-lg shadow-2xl"
+              />
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  },
+  (prevProps, nextProps) => {
+    // 只在 previewImage 的关键属性变化时才重新渲染
+    return (
+      prevProps.previewImage?.id === nextProps.previewImage?.id &&
+      prevProps.previewImage?.src === nextProps.previewImage?.src &&
+      prevProps.onClose === nextProps.onClose
+    );
+  }
+);
+
+ImagePreviewModal.displayName = "ImagePreviewModal";
+
+// 下载进度模态框组件 - 使用memo优化
+const DownloadProgressModal = memo(
+  ({ downloadProgress }) => {
+    return (
+      <div
+        className="fixed inset-0 w-full h-full flex items-center justify-center"
+        style={{
+          position: "fixed",
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          zIndex: 99999,
+          overflow: "hidden",
+          backgroundColor: "rgba(0, 0, 0, 0.85)",
+        }}
+      >
+        <div className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-md w-full">
+          <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">
+            正在打包下载...
+          </h3>
+          <div className="w-full bg-gray-200 rounded-full h-4 dark:bg-gray-700 mb-4">
+            <div
+              className="bg-blue-600 h-4 rounded-full transition-all duration-300"
+              style={{ width: `${downloadProgress}%` }}
+            ></div>
+          </div>
+          <div className="text-center text-gray-700 dark:text-gray-300">
+            {Math.round(downloadProgress)}%
+          </div>
+        </div>
+      </div>
+    );
+  },
+  (prevProps, nextProps) => {
+    // 只在进度变化超过1%时才重新渲染，减少不必要的更新
+    return (
+      Math.floor(prevProps.downloadProgress) ===
+      Math.floor(nextProps.downloadProgress)
+    );
+  }
+);
+
+DownloadProgressModal.displayName = "DownloadProgressModal";
 
 const Tasks = ({ tasks, setTasks }) => {
   const [images, setImages] = useState(tasks);
@@ -211,25 +515,28 @@ const Tasks = ({ tasks, setTasks }) => {
     }
   };
 
-  const openPreview = (image) => {
-    if (selectionMode) return;
-    if (!image.src) return;
-    setPreviewImage(image);
-    // 防止背景滚动
-    if (typeof document !== "undefined") {
-      document.documentElement.style.overflow = "hidden";
-      document.body.style.overflow = "hidden";
-    }
-  };
+  const openPreview = useCallback(
+    (image) => {
+      if (selectionMode) return;
+      if (!image.src) return;
+      setPreviewImage(image);
+      // 防止背景滚动
+      if (typeof document !== "undefined") {
+        document.documentElement.style.overflow = "hidden";
+        document.body.style.overflow = "hidden";
+      }
+    },
+    [selectionMode]
+  );
 
-  const closePreview = () => {
+  const closePreview = useCallback(() => {
     setPreviewImage(null);
     // 恢复背景滚动
     if (typeof document !== "undefined") {
       document.documentElement.style.overflow = "";
       document.body.style.overflow = "";
     }
-  };
+  }, []);
 
   const toggleImageSelection = (imageId) => {
     console.log(`切换图片选择: imageId=${imageId}, 当前选择:`, selectedImages);
@@ -425,89 +732,6 @@ const Tasks = ({ tasks, setTasks }) => {
     );
   }
 
-  // 图片/视频预览模态框组件
-  const ImagePreviewModal = () => {
-    if (!previewImage) return null;
-
-    const isVideo = isVideoModel(previewImage.model);
-
-    return (
-      <div
-        className="fixed inset-0 w-full h-full"
-        style={{
-          position: "fixed",
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          zIndex: 99999,
-          overflow: "hidden",
-          backgroundColor: "rgba(0, 0, 0, 0.85)",
-        }}
-        onClick={closePreview}
-      >
-        <div className="absolute inset-0 flex items-center justify-center">
-          <div
-            className="relative max-w-4xl"
-            onClick={(e) => e.stopPropagation()}
-          >
-            {isVideo ? (
-              <video
-                src={previewImage.src}
-                controls
-                autoPlay
-                loop
-                className="max-w-full max-h-[90vh] object-contain rounded-lg shadow-2xl"
-              >
-                您的浏览器不支持视频播放
-              </video>
-            ) : (
-              <img
-                src={previewImage.src}
-                alt={previewImage.alt}
-                className="max-w-full max-h-[90vh] object-contain rounded-lg shadow-2xl"
-              />
-            )}
-          </div>
-        </div>
-      </div>
-    );
-  };
-
-  // 下载进度模态框
-  const DownloadProgressModal = () => {
-    return (
-      <div
-        className="fixed inset-0 w-full h-full flex items-center justify-center"
-        style={{
-          position: "fixed",
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          zIndex: 99999,
-          overflow: "hidden",
-          backgroundColor: "rgba(0, 0, 0, 0.85)",
-        }}
-      >
-        <div className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-md w-full">
-          <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">
-            正在打包下载...
-          </h3>
-          <div className="w-full bg-gray-200 rounded-full h-4 dark:bg-gray-700 mb-4">
-            <div
-              className="bg-blue-600 h-4 rounded-full transition-all duration-300"
-              style={{ width: `${downloadProgress}%` }}
-            ></div>
-          </div>
-          <div className="text-center text-gray-700 dark:text-gray-300">
-            {Math.round(downloadProgress)}%
-          </div>
-        </div>
-      </div>
-    );
-  };
-
   // 空状态组件
   const EmptyState = () => {
     return (
@@ -666,153 +890,18 @@ const Tasks = ({ tasks, setTasks }) => {
         /* 图片网格 */
         <div className="grid p-4 grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 mb-6 max-h-[70vh] overflow-y-auto">
           {images.map((image, index) => (
-            <div
+            <TaskItem
               key={image.id}
-              className={`group relative ${
-                selectionMode ? "cursor-pointer" : ""
-              }`}
-              style={{
-                animation: `fadeInUp 0.6s ease-out ${index * 100}ms forwards`,
-              }}
-              onClick={(e) => {
-                if (selectionMode) {
-                  e.stopPropagation();
-                  toggleImageSelection(image.id);
-                } else {
-                  openPreview(image);
-                }
-              }}
-            >
-              <div
-                className={`relative overflow-hidden rounded-lg shadow-md hover:shadow-xl transition-all duration-300 transform hover:scale-105 ${
-                  selectionMode && selectedImages.includes(image.id)
-                    ? "ring-4 ring-blue-500 ring-opacity-70"
-                    : ""
-                }`}
-              >
-                {/* 图片/视频容器 - 固定宽高比 */}
-                <div className="relative aspect-square bg-gray-100 dark:bg-gray-800">
-                  {!image.error && image.src ? (
-                    isVideoModel(image.model) ? (
-                      <video
-                        src={image.src}
-                        className={`cursor-pointer w-full h-full object-cover transition-opacity duration-300`}
-                        onLoadedData={() => handleImageLoad(index)}
-                        onError={() => handleImageError(index)}
-                        preload="metadata"
-                        muted
-                        playsInline
-                      />
-                    ) : (
-                      <img
-                        src={image.src}
-                        alt={image.alt}
-                        className={`cursor-pointer w-full h-full object-cover transition-opacity duration-300`}
-                        onLoad={() => handleImageLoad(index)}
-                        onError={() => handleImageError(index)}
-                        loading="lazy"
-                      />
-                    )
-                  ) : (
-                    <div className="w-full h-full flex flex-col items-center justify-center text-gray-400 p-4">
-                      <svg
-                        className="w-8 h-8 mb-2"
-                        fill="currentColor"
-                        viewBox="0 0 20 20"
-                      >
-                        <path
-                          fillRule="evenodd"
-                          d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z"
-                          clipRule="evenodd"
-                        />
-                      </svg>
-                      <span className="text-xs text-center text-gray-500 dark:text-gray-400">
-                        {getErrorMessage(image)}
-                      </span>
-                    </div>
-                  )}
-
-                  {/* 加载指示器 */}
-                  {!image.loaded && !image.error && !image.finish && (
-                    <div className="absolute bottom-0 left-0 right-0 flex flex-col items-center justify-center bg-white/70 dark:bg-black/70 p-2">
-                      {image.progress > 0 ? (
-                        /* 进度条 */
-                        <div className="w-full">
-                          <div className="flex justify-between mb-1">
-                            <span className="text-xs font-medium text-gray-700 dark:text-gray-300">
-                              进度
-                            </span>
-                            <span className="text-xs font-medium text-gray-700 dark:text-gray-300">
-                              {Math.round(image.progress)}%
-                            </span>
-                          </div>
-                          <div className="w-full bg-gray-200 rounded-full h-2.5 dark:bg-gray-700">
-                            <div
-                              className="bg-blue-600 h-2.5 rounded-full transition-all duration-300"
-                              style={{
-                                width: `${Math.min(
-                                  100,
-                                  Math.max(0, image.progress)
-                                )}%`,
-                              }}
-                            ></div>
-                          </div>
-                        </div>
-                      ) : (
-                        <div className="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
-                      )}
-                    </div>
-                  )}
-
-                  {/* 视频播放图标指示器 */}
-                  {isVideoModel(image.model) &&
-                    image.src &&
-                    !image.error &&
-                    !selectionMode && (
-                      <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                        <div className="bg-black/50 rounded-full p-3 backdrop-blur-sm">
-                          <svg
-                            className="w-8 h-8 text-white"
-                            fill="currentColor"
-                            viewBox="0 0 20 20"
-                          >
-                            <path d="M6.3 2.841A1.5 1.5 0 004 4.11V15.89a1.5 1.5 0 002.3 1.269l9.344-5.89a1.5 1.5 0 000-2.538L6.3 2.84z" />
-                          </svg>
-                        </div>
-                      </div>
-                    )}
-
-                  {/* 选择指示器 - 确保在所有图片上显示 */}
-                  {selectionMode && (
-                    <div className="absolute top-2 right-2 z-10 pointer-events-none">
-                      <div
-                        className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-colors ${
-                          selectedImages.includes(image.id)
-                            ? "bg-blue-500 border-blue-500"
-                            : "bg-white/70 border-gray-400"
-                        }`}
-                      >
-                        {selectedImages.includes(image.id) && (
-                          <svg
-                            className="w-4 h-4 text-white"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M5 13l4 4L19 7"
-                            />
-                          </svg>
-                        )}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
+              image={image}
+              index={index}
+              selectionMode={selectionMode}
+              selectedImages={selectedImages}
+              onImageLoad={handleImageLoad}
+              onImageError={handleImageError}
+              onToggleSelection={toggleImageSelection}
+              onOpenPreview={openPreview}
+              getErrorMessage={getErrorMessage}
+            />
           ))}
         </div>
       )}
@@ -820,10 +909,19 @@ const Tasks = ({ tasks, setTasks }) => {
       {/* 使用Portal渲染模态框到body */}
       {mounted &&
         previewImage &&
-        createPortal(<ImagePreviewModal />, document.body)}
+        createPortal(
+          <ImagePreviewModal
+            previewImage={previewImage}
+            onClose={closePreview}
+          />,
+          document.body
+        )}
       {mounted &&
         downloading &&
-        createPortal(<DownloadProgressModal />, document.body)}
+        createPortal(
+          <DownloadProgressModal downloadProgress={downloadProgress} />,
+          document.body
+        )}
 
       {/* 自定义样式 */}
       <style jsx>{`

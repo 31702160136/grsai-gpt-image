@@ -75,7 +75,13 @@ const Home = ({
       ? currentSize
       : availableSizes[0];
 
-    setDrawData({ ...drawData, model: newModel, size: newSize });
+    // Set default duration for sora-2 model
+    const newData = { ...drawData, model: newModel, size: newSize };
+    if (newModel === "sora-2" && !drawData.duration) {
+      newData.duration = 10;
+    }
+
+    setDrawData(newData);
   };
 
   // Render size icon based on aspect ratio
@@ -409,6 +415,82 @@ const Home = ({
             </SelectContent>
           </Select>
         </div>
+        {/* Duration option for sora-2 model */}
+        {drawData.model === "sora-2" && (
+          <div className="mb-3">
+            <div className="text-sm font-medium mb-2 text-foreground">
+              时长选项
+            </div>
+            <Select
+              value={drawData.duration?.toString() || "10"}
+              onValueChange={(value) =>
+                setDrawData({ ...drawData, duration: Number(value) })
+              }
+            >
+              <SelectTrigger className="w-full h-11 bg-input border-primary/50">
+                <SelectValue>
+                  <div className="flex items-center gap-2">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="20"
+                      height="20"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <circle cx="12" cy="12" r="10" />
+                      <polyline points="12 6 12 12 16 14" />
+                    </svg>
+                    <span>{drawData.duration || 10}秒</span>
+                  </div>
+                </SelectValue>
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="10">
+                  <div className="flex items-center gap-2">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="20"
+                      height="20"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <circle cx="12" cy="12" r="10" />
+                      <polyline points="12 6 12 12 16 14" />
+                    </svg>
+                    <span>10秒</span>
+                  </div>
+                </SelectItem>
+                <SelectItem value="15">
+                  <div className="flex items-center gap-2">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="20"
+                      height="20"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <circle cx="12" cy="12" r="10" />
+                      <polyline points="12 6 12 12 16 14" />
+                    </svg>
+                    <span>15秒</span>
+                  </div>
+                </SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        )}
         <Textarea
           placeholder="Tell us how you want to edit the image"
           className="resize-none h-[100px] text-foreground p-2 border-primary/50 bg-input"
