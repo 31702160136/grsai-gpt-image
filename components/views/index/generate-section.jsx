@@ -73,6 +73,7 @@ const GenerateSection = () => {
       "sora-image": "https://grsai.dakka.com.cn/v1/draw/completions",
       "nano-banana-fast": "https://grsai.dakka.com.cn/v1/draw/nano-banana",
       "nano-banana": "https://grsai.dakka.com.cn/v1/draw/nano-banana",
+      "nano-banana-pro": "https://grsai.dakka.com.cn/v1/draw/nano-banana",
       "veo3.1-fast": "https://grsai.dakka.com.cn/v1/video/veo",
       "veo3.1-pro": "https://grsai.dakka.com.cn/v1/video/veo",
       "sora-2": "https://grsai.dakka.com.cn/v1/video/sora-video",
