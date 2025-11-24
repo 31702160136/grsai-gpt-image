@@ -118,6 +118,11 @@ const GenerateSection = () => {
         delete requestData.urls;
       }
 
+      // Remove imageSize for models other than nano-banana-pro
+      if (drawData.model !== "nano-banana-pro") {
+        delete requestData.imageSize;
+      }
+
       const res = await fetch(apiEndpoint, {
         method: "POST",
         headers: {

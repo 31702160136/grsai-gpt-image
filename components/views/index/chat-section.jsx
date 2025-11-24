@@ -93,6 +93,9 @@ const Home = ({
     if (newModel === "sora-2" && !drawData.duration) {
       newData.duration = 10;
     }
+    if (newModel === "nano-banana-pro" && !drawData.imageSize) {
+      newData.imageSize = "1K";
+    }
 
     setDrawData(newData);
   };
@@ -503,6 +506,45 @@ const Home = ({
                       <polyline points="12 6 12 12 16 14" />
                     </svg>
                     <span>15秒</span>
+                  </div>
+                </SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        )}
+        {/* Image Size option for nano-banana-pro model */}
+        {drawData.model === "nano-banana-pro" && (
+          <div className="mb-3">
+            <div className="text-sm font-medium mb-2 text-foreground">
+              imageSize参数
+            </div>
+            <Select
+              value={drawData.imageSize || "1K"}
+              onValueChange={(value) =>
+                setDrawData({ ...drawData, imageSize: value })
+              }
+            >
+              <SelectTrigger className="w-full h-11 bg-input border-primary/50">
+                <SelectValue>
+                  <div className="flex items-center gap-2">
+                    <span>{drawData.imageSize || "1K"}</span>
+                  </div>
+                </SelectValue>
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="1K">
+                  <div className="flex items-center gap-2">
+                    <span>1K</span>
+                  </div>
+                </SelectItem>
+                <SelectItem value="2K">
+                  <div className="flex items-center gap-2">
+                    <span>2K</span>
+                  </div>
+                </SelectItem>
+                <SelectItem value="4K">
+                  <div className="flex items-center gap-2">
+                    <span>4K</span>
                   </div>
                 </SelectItem>
               </SelectContent>
