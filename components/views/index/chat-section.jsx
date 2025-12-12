@@ -106,7 +106,10 @@ const Home = ({
     if (newModel === "sora-2" && !drawData.duration) {
       newData.duration = 10;
     }
-    if (newModel === "nano-banana-pro" && !drawData.imageSize) {
+    if (
+      (newModel === "nano-banana-pro" || newModel === "nano-banana-pro-vt") &&
+      !drawData.imageSize
+    ) {
       newData.imageSize = "1K";
     }
 
