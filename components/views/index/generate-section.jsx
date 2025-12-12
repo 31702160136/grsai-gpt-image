@@ -69,18 +69,19 @@ const GenerateSection = () => {
   };
 
   const getAPIEndpoint = (model) => {
+    // const baseUrl = "https://grsai.dakka.com.cn";
+    const baseUrl = "http://127.0.0.1:13002";
     const endpointMap = {
-      "sora-image": "https://grsai.dakka.com.cn/v1/draw/completions",
-      "nano-banana-fast": "https://grsai.dakka.com.cn/v1/draw/nano-banana",
-      "nano-banana": "https://grsai.dakka.com.cn/v1/draw/nano-banana",
-      "nano-banana-pro": "https://grsai.dakka.com.cn/v1/draw/nano-banana",
-      "veo3.1-fast": "https://grsai.dakka.com.cn/v1/video/veo",
-      "veo3.1-pro": "https://grsai.dakka.com.cn/v1/video/veo",
-      "sora-2": "https://grsai.dakka.com.cn/v1/video/sora-video",
+      "sora-image": `${baseUrl}/v1/draw/completions`,
+      "nano-banana-fast": `${baseUrl}/v1/draw/nano-banana`,
+      "nano-banana": `${baseUrl}/v1/draw/nano-banana`,
+      "nano-banana-pro": `${baseUrl}/v1/draw/nano-banana`,
+      "nano-banana-pro-vt": `${baseUrl}/v1/draw/nano-banana`,
+      "veo3.1-fast": `${baseUrl}/v1/video/veo`,
+      "veo3.1-pro": `${baseUrl}/v1/video/veo`,
+      "sora-2": `${baseUrl}/v1/video/sora-video`,
     };
-    return (
-      endpointMap[model] || "https://grsai.dakka.com.cn/v1/draw/completions"
-    );
+    return endpointMap[model] || `${baseUrl}/v1/draw/completions`;
   };
 
   async function onGenerate() {
@@ -205,8 +206,10 @@ const GenerateSection = () => {
   }
 
   async function handleTask(id) {
+    // const baseUrl = "https://grsai.dakka.com.cn";
+    const baseUrl = "http://127.0.0.1:13002";
     while (true) {
-      const res = await fetch(`https://grsai.dakka.com.cn/v1/draw/result`, {
+      const res = await fetch(`${baseUrl}/v1/draw/result`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

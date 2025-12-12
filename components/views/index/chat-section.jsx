@@ -53,6 +53,19 @@ const MODEL_SIZE_MAP = {
     "5:4",
     "21:9",
   ],
+  "nano-banana-pro-vt": [
+    "auto",
+    "1:1",
+    "3:4",
+    "4:3",
+    "9:16",
+    "16:9",
+    "2:3",
+    "3:2",
+    "4:5",
+    "5:4",
+    "21:9",
+  ],
   "veo3.1-fast": ["16:9", "9:16"],
   "veo3.1-pro": ["16:9", "9:16"],
   "sora-2": ["16:9", "9:16"],
@@ -388,6 +401,11 @@ const Home = ({
               <SelectItem value="nano-banana-pro">
                 <div className="flex items-center gap-2">
                   <span>nano-banana-pro</span>
+                </div>
+              </SelectItem>
+              <SelectItem value="nano-banana-pro-vt">
+                <div className="flex items-center gap-2">
+                  <span>nano-banana-pro-vt</span>
                 </div>
               </SelectItem>
               <SelectItem value="sora-2">
