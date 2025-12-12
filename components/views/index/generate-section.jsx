@@ -69,8 +69,8 @@ const GenerateSection = () => {
   };
 
   const getAPIEndpoint = (model) => {
-    // const baseUrl = "https://grsai.dakka.com.cn";
-    const baseUrl = "http://127.0.0.1:13002";
+    const baseUrl = "https://grsai.dakka.com.cn";
+    // const baseUrl = "http://127.0.0.1:13002";
     const endpointMap = {
       "sora-image": `${baseUrl}/v1/draw/completions`,
       "nano-banana-fast": `${baseUrl}/v1/draw/nano-banana`,
@@ -206,8 +206,8 @@ const GenerateSection = () => {
   }
 
   async function handleTask(id) {
-    // const baseUrl = "https://grsai.dakka.com.cn";
-    const baseUrl = "http://127.0.0.1:13002";
+    const baseUrl = "https://grsai.dakka.com.cn";
+    // const baseUrl = "http://127.0.0.1:13002";
     while (true) {
       const res = await fetch(`${baseUrl}/v1/draw/result`, {
         method: "POST",
