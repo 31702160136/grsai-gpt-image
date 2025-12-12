@@ -121,7 +121,7 @@ const GenerateSection = () => {
 
       // Remove imageSize for models other than nano-banana-pro
       if (
-        drawData.model !== "nano-banana-pro" ||
+        drawData.model !== "nano-banana-pro" &&
         drawData.model !== "nano-banana-pro-vt"
       ) {
         delete requestData.imageSize;
