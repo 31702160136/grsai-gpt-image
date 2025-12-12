@@ -531,7 +531,8 @@ const Home = ({
           </div>
         )}
         {/* Image Size option for nano-banana-pro model */}
-        {drawData.model === "nano-banana-pro" && (
+        {(drawData.model === "nano-banana-pro" ||
+          drawData.model === "nano-banana-pro-vt") && (
           <div className="mb-3">
             <div className="text-sm font-medium mb-2 text-foreground">
               imageSize参数
