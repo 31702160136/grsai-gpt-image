@@ -71,6 +71,7 @@ const GenerateSection = () => {
   const getAPIEndpoint = (model) => {
     const baseUrl = "https://grsai.dakka.com.cn";
     // const baseUrl = "http://127.0.0.1:13002";
+    // const baseUrl = "http://114.66.27.18:13050";
     const endpointMap = {
       "sora-image": `${baseUrl}/v1/draw/completions`,
       "nano-banana-fast": `${baseUrl}/v1/draw/nano-banana`,
@@ -189,7 +190,6 @@ const GenerateSection = () => {
   }
 
   function getCNZUrl(url) {
-    return url;
     let result = url.replace(/https:\/\//g, ""); // g 标志表示全局替换所有匹配项
     result = result.replace(/http:\/\//g, "");
 
@@ -211,6 +211,7 @@ const GenerateSection = () => {
   async function handleTask(id) {
     const baseUrl = "https://grsai.dakka.com.cn";
     // const baseUrl = "http://127.0.0.1:13002";
+    // const baseUrl = "http://114.66.27.18:13050";
     while (true) {
       const res = await fetch(`${baseUrl}/v1/draw/result`, {
         method: "POST",
