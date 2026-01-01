@@ -205,6 +205,7 @@ const GenerateSection = () => {
     result = result.replace(/\//g, "_x_");
     result = result + "." + suffix;
 
+    // 国内中转地址, 解决网络问题
     return "https://grsai-file2.dakka.com.cn/cnzfile/" + result;
   }
 
