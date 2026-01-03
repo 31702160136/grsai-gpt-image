@@ -190,6 +190,7 @@ const GenerateSection = () => {
   }
 
   function getCNZUrl(url) {
+    return url;
     let result = url.replace(/https:\/\//g, ""); // g 标志表示全局替换所有匹配项
     result = result.replace(/http:\/\//g, "");
 
