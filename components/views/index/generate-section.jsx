@@ -78,6 +78,9 @@ const GenerateSection = () => {
       "nano-banana": `${baseUrl}/v1/draw/nano-banana`,
       "nano-banana-pro": `${baseUrl}/v1/draw/nano-banana`,
       "nano-banana-pro-vt": `${baseUrl}/v1/draw/nano-banana`,
+      "nano-banana-pro-cl": `${baseUrl}/v1/draw/nano-banana`,
+      "nano-banana-pro-vip": `${baseUrl}/v1/draw/nano-banana`,
+      "nano-banana-pro-4k-vip": `${baseUrl}/v1/draw/nano-banana`,
       "nano-banana-2": `${baseUrl}/v1/draw/nano-banana`,
       "veo3.1-fast": `${baseUrl}/v1/video/veo`,
       "veo3.1-pro": `${baseUrl}/v1/video/veo`,
@@ -125,6 +128,9 @@ const GenerateSection = () => {
       if (
         drawData.model !== "nano-banana-pro" &&
         drawData.model !== "nano-banana-pro-vt" &&
+        drawData.model !== "nano-banana-pro-cl" &&
+        drawData.model !== "nano-banana-pro-vip" &&
+        drawData.model !== "nano-banana-pro-4k-vip" &&
         drawData.model !== "nano-banana-2"
       ) {
         delete requestData.imageSize;

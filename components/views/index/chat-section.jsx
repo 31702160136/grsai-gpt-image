@@ -66,6 +66,45 @@ const MODEL_SIZE_MAP = {
     "5:4",
     "21:9",
   ],
+  "nano-banana-pro-cl": [
+    "auto",
+    "1:1",
+    "3:4",
+    "4:3",
+    "9:16",
+    "16:9",
+    "2:3",
+    "3:2",
+    "4:5",
+    "5:4",
+    "21:9",
+  ],
+  "nano-banana-pro-vip": [
+    "auto",
+    "1:1",
+    "3:4",
+    "4:3",
+    "9:16",
+    "16:9",
+    "2:3",
+    "3:2",
+    "4:5",
+    "5:4",
+    "21:9",
+  ],
+  "nano-banana-pro-4k-vip": [
+    "auto",
+    "1:1",
+    "3:4",
+    "4:3",
+    "9:16",
+    "16:9",
+    "2:3",
+    "3:2",
+    "4:5",
+    "5:4",
+    "21:9",
+  ],
   "nano-banana-2": [
     "auto",
     "1:1",
@@ -122,6 +161,9 @@ const Home = ({
     if (
       (newModel === "nano-banana-pro" ||
         newModel === "nano-banana-pro-vt" ||
+        newModel === "nano-banana-pro-cl" ||
+        newModel === "nano-banana-pro-vip" ||
+        newModel === "nano-banana-pro-4k-vip" ||
         newModel === "nano-banana-2") &&
       !drawData.imageSize
     ) {
@@ -426,6 +468,21 @@ const Home = ({
                   <span>nano-banana-pro-vt</span>
                 </div>
               </SelectItem>
+              <SelectItem value="nano-banana-pro-cl">
+                <div className="flex items-center gap-2">
+                  <span>nano-banana-pro-cl</span>
+                </div>
+              </SelectItem>
+              <SelectItem value="nano-banana-pro-vip">
+                <div className="flex items-center gap-2">
+                  <span>nano-banana-pro-vip</span>
+                </div>
+              </SelectItem>
+              <SelectItem value="nano-banana-pro-4k-vip">
+                <div className="flex items-center gap-2">
+                  <span>nano-banana-pro-4k-vip</span>
+                </div>
+              </SelectItem>
               <SelectItem value="nano-banana-2">
                 <div className="flex items-center gap-2">
                   <span>nano-banana-2</span>
@@ -556,6 +613,9 @@ const Home = ({
         {/* Image Size option for nano-banana-pro model */}
         {(drawData.model === "nano-banana-pro" ||
           drawData.model === "nano-banana-pro-vt" ||
+          drawData.model === "nano-banana-pro-cl" ||
+          drawData.model === "nano-banana-pro-vip" ||
+          drawData.model === "nano-banana-pro-4k-vip" ||
           drawData.model === "nano-banana-2") && (
           <div className="mb-3">
             <div className="text-sm font-medium mb-2 text-foreground">
