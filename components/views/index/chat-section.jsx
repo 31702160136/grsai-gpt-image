@@ -66,6 +66,19 @@ const MODEL_SIZE_MAP = {
     "5:4",
     "21:9",
   ],
+  "nano-banana-2": [
+    "auto",
+    "1:1",
+    "3:4",
+    "4:3",
+    "9:16",
+    "16:9",
+    "2:3",
+    "3:2",
+    "4:5",
+    "5:4",
+    "21:9",
+  ],
   "veo3.1-fast": ["16:9", "9:16"],
   "veo3.1-pro": ["16:9", "9:16"],
   "sora-2": ["16:9", "9:16"],
@@ -107,7 +120,9 @@ const Home = ({
       newData.duration = 10;
     }
     if (
-      (newModel === "nano-banana-pro" || newModel === "nano-banana-pro-vt") &&
+      (newModel === "nano-banana-pro" ||
+        newModel === "nano-banana-pro-vt" ||
+        newModel === "nano-banana-2") &&
       !drawData.imageSize
     ) {
       newData.imageSize = "1K";
@@ -245,7 +260,7 @@ const Home = ({
             const files = Array.from(e.dataTransfer.files);
             if (files.some((file) => file.type.startsWith("image/"))) {
               const imageFiles = files.filter((file) =>
-                file.type.startsWith("image/")
+                file.type.startsWith("image/"),
               );
               const event = { target: { files: imageFiles } };
               handleImageUpload(event);
@@ -411,6 +426,11 @@ const Home = ({
                   <span>nano-banana-pro-vt</span>
                 </div>
               </SelectItem>
+              <SelectItem value="nano-banana-2">
+                <div className="flex items-center gap-2">
+                  <span>nano-banana-2</span>
+                </div>
+              </SelectItem>
               <SelectItem value="sora-2">
                 <div className="flex items-center gap-2">
                   <span>sora-2</span>
@@ -535,7 +555,8 @@ const Home = ({
         )}
         {/* Image Size option for nano-banana-pro model */}
         {(drawData.model === "nano-banana-pro" ||
-          drawData.model === "nano-banana-pro-vt") && (
+          drawData.model === "nano-banana-pro-vt" ||
+          drawData.model === "nano-banana-2") && (
           <div className="mb-3">
             <div className="text-sm font-medium mb-2 text-foreground">
               imageSize参数
