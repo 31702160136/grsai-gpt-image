@@ -82,6 +82,8 @@ const GenerateSection = () => {
       "nano-banana-pro-vip": `${baseUrl}/v1/draw/nano-banana`,
       "nano-banana-pro-4k-vip": `${baseUrl}/v1/draw/nano-banana`,
       "nano-banana-2": `${baseUrl}/v1/draw/nano-banana`,
+      "nano-banana-2-cl": `${baseUrl}/v1/draw/nano-banana`,
+      "nano-banana-2-4k-cl": `${baseUrl}/v1/draw/nano-banana`,
       "veo3.1-fast": `${baseUrl}/v1/video/veo`,
       "veo3.1-pro": `${baseUrl}/v1/video/veo`,
       "sora-2": `${baseUrl}/v1/video/sora-video`,
@@ -131,7 +133,9 @@ const GenerateSection = () => {
         drawData.model !== "nano-banana-pro-cl" &&
         drawData.model !== "nano-banana-pro-vip" &&
         drawData.model !== "nano-banana-pro-4k-vip" &&
-        drawData.model !== "nano-banana-2"
+        drawData.model !== "nano-banana-2" &&
+        drawData.model !== "nano-banana-2-cl" &&
+        drawData.model !== "nano-banana-2-4k-cl"
       ) {
         delete requestData.imageSize;
       }
@@ -247,7 +251,7 @@ const GenerateSection = () => {
               };
             }
             return task;
-          })
+          }),
         );
         break;
       }
@@ -263,7 +267,7 @@ const GenerateSection = () => {
               return { ...task, finish: false, progress: data.progress };
             }
             return task;
-          })
+          }),
         );
         await new Promise((resolve) => setTimeout(resolve, 5000));
         continue;
@@ -288,7 +292,7 @@ const GenerateSection = () => {
               };
             }
             return task;
-          })
+          }),
         );
         break;
       }
@@ -305,7 +309,7 @@ const GenerateSection = () => {
               };
             }
             return task;
-          })
+          }),
         );
         break;
       }

@@ -117,6 +117,44 @@ const MODEL_SIZE_MAP = {
     "4:5",
     "5:4",
     "21:9",
+    "1:4",
+    "4:1",
+    "1:8",
+    "8:1",
+  ],
+  "nano-banana-2-cl": [
+    "auto",
+    "1:1",
+    "3:4",
+    "4:3",
+    "9:16",
+    "16:9",
+    "2:3",
+    "3:2",
+    "4:5",
+    "5:4",
+    "21:9",
+    "1:4",
+    "4:1",
+    "1:8",
+    "8:1",
+  ],
+  "nano-banana-2-4k-cl": [
+    "auto",
+    "1:1",
+    "3:4",
+    "4:3",
+    "9:16",
+    "16:9",
+    "2:3",
+    "3:2",
+    "4:5",
+    "5:4",
+    "21:9",
+    "1:4",
+    "4:1",
+    "1:8",
+    "8:1",
   ],
   "veo3.1-fast": ["16:9", "9:16"],
   "veo3.1-pro": ["16:9", "9:16"],
@@ -159,12 +197,17 @@ const Home = ({
       newData.duration = 10;
     }
     if (
+      newModel === "nano-banana-2-4k-cl" ||
+      newModel === "nano-banana-pro-4k-vip"
+    ) {
+      newData.imageSize = "4K";
+    } else if (
       (newModel === "nano-banana-pro" ||
         newModel === "nano-banana-pro-vt" ||
         newModel === "nano-banana-pro-cl" ||
         newModel === "nano-banana-pro-vip" ||
-        newModel === "nano-banana-pro-4k-vip" ||
-        newModel === "nano-banana-2") &&
+        newModel === "nano-banana-2" ||
+        newModel === "nano-banana-2-cl") &&
       !drawData.imageSize
     ) {
       newData.imageSize = "1K";
@@ -488,6 +531,16 @@ const Home = ({
                   <span>nano-banana-2</span>
                 </div>
               </SelectItem>
+              <SelectItem value="nano-banana-2-cl">
+                <div className="flex items-center gap-2">
+                  <span>nano-banana-2-cl</span>
+                </div>
+              </SelectItem>
+              <SelectItem value="nano-banana-2-4k-cl">
+                <div className="flex items-center gap-2">
+                  <span>nano-banana-2-4k-cl</span>
+                </div>
+              </SelectItem>
               <SelectItem value="sora-2">
                 <div className="flex items-center gap-2">
                   <span>sora-2</span>
@@ -616,7 +669,9 @@ const Home = ({
           drawData.model === "nano-banana-pro-cl" ||
           drawData.model === "nano-banana-pro-vip" ||
           drawData.model === "nano-banana-pro-4k-vip" ||
-          drawData.model === "nano-banana-2") && (
+          drawData.model === "nano-banana-2" ||
+          drawData.model === "nano-banana-2-cl" ||
+          drawData.model === "nano-banana-2-4k-cl") && (
           <div className="mb-3">
             <div className="text-sm font-medium mb-2 text-foreground">
               imageSize参数
@@ -635,21 +690,29 @@ const Home = ({
                 </SelectValue>
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="1K">
-                  <div className="flex items-center gap-2">
-                    <span>1K</span>
-                  </div>
-                </SelectItem>
-                <SelectItem value="2K">
-                  <div className="flex items-center gap-2">
-                    <span>2K</span>
-                  </div>
-                </SelectItem>
-                <SelectItem value="4K">
-                  <div className="flex items-center gap-2">
-                    <span>4K</span>
-                  </div>
-                </SelectItem>
+                {drawData.model !== "nano-banana-2-4k-cl" &&
+                  drawData.model !== "nano-banana-pro-4k-vip" && (
+                    <>
+                      <SelectItem value="1K">
+                        <div className="flex items-center gap-2">
+                          <span>1K</span>
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="2K">
+                        <div className="flex items-center gap-2">
+                          <span>2K</span>
+                        </div>
+                      </SelectItem>
+                    </>
+                  )}
+                {drawData.model !== "nano-banana-2-cl" &&
+                  drawData.model !== "nano-banana-pro-vip" && (
+                    <SelectItem value="4K">
+                      <div className="flex items-center gap-2">
+                        <span>4K</span>
+                      </div>
+                    </SelectItem>
+                  )}
               </SelectContent>
             </Select>
           </div>
