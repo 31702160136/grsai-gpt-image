@@ -10,7 +10,7 @@ const LOCAL_STORAGE_KEY = "savedTasks";
 const MAX_SAVED_TASKS = 200;
 
 // 视频模型列表
-const VIDEO_MODELS = ["veo3.1-fast", "veo3.1-pro", "sora-2"];
+const VIDEO_MODELS = ["veo3.1-fast", "veo3.1-pro"];
 
 // 判断是否为视频模型
 const isVideoModel = (model) => {

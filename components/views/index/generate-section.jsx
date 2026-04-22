@@ -11,7 +11,7 @@ const GenerateSection = () => {
     prompt: ``,
     size: "auto",
     variants: 1,
-    model: "sora-image",
+    model: "gpt-image-2",
     urls: [],
     webHook: "-1",
   });
@@ -73,7 +73,7 @@ const GenerateSection = () => {
     // const baseUrl = "http://127.0.0.1:13002";
     // const baseUrl = "http://114.66.27.18:13050";
     const endpointMap = {
-      "sora-image": `${baseUrl}/v1/draw/completions`,
+      "gpt-image-2": `${baseUrl}/v1/draw/completions`,
       "nano-banana-fast": `${baseUrl}/v1/draw/nano-banana`,
       "nano-banana": `${baseUrl}/v1/draw/nano-banana`,
       "nano-banana-pro": `${baseUrl}/v1/draw/nano-banana`,
@@ -86,7 +86,6 @@ const GenerateSection = () => {
       "nano-banana-2-4k-cl": `${baseUrl}/v1/draw/nano-banana`,
       "veo3.1-fast": `${baseUrl}/v1/video/veo`,
       "veo3.1-pro": `${baseUrl}/v1/video/veo`,
-      "sora-2": `${baseUrl}/v1/video/sora-video`,
     };
     return endpointMap[model] || `${baseUrl}/v1/draw/completions`;
   };
@@ -104,10 +103,9 @@ const GenerateSection = () => {
       const apiEndpoint = getAPIEndpoint(drawData.model);
 
       // 根据模型类型转换尺寸参数
-      // 只有sora-image使用size参数，其他模型使用aspectRatio参数
+      // 只有 gpt-image-2 使用size参数，其他模型使用aspectRatio参数
       const requestData = { ...drawData };
-      if (drawData.model === "sora-image") {
-        // sora-image使用size参数
+      if (drawData.model === "gpt-image-2") {
         requestData.size = drawData.size;
       } else {
         // 其他模型使用aspectRatio参数
@@ -118,11 +116,6 @@ const GenerateSection = () => {
 
       if (drawData.model.indexOf("veo") !== -1 && drawData.urls.length > 0) {
         requestData.firstFrameUrl = drawData.urls[0];
-        delete requestData.urls;
-      }
-
-      if (drawData.model.indexOf("sora-2") !== -1 && drawData.urls.length > 0) {
-        requestData.url = drawData.urls[0];
         delete requestData.urls;
       }
 

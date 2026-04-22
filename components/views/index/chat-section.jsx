@@ -13,7 +13,21 @@ import "./chat-section.css";
 
 // Model size support mapping
 const MODEL_SIZE_MAP = {
-  "sora-image": ["auto", "1:1", "2:3", "3:2"],
+  "gpt-image-2": [
+    "1:1",
+    "3:2",
+    "2:3",
+    "16:9",
+    "9:16",
+    "4:3",
+    "3:4",
+    "21:9",
+    "9:21",
+    "1:3",
+    "3:1",
+    "2:1",
+    "1:2",
+  ],
   "nano-banana-fast": [
     "auto",
     "1:1",
@@ -158,11 +172,10 @@ const MODEL_SIZE_MAP = {
   ],
   "veo3.1-fast": ["16:9", "9:16"],
   "veo3.1-pro": ["16:9", "9:16"],
-  "sora-2": ["16:9", "9:16"],
 };
 
 // 视频模型列表
-const VIDEO_MODELS = ["veo3.1-fast", "veo3.1-pro", "sora-2"];
+const VIDEO_MODELS = ["veo3.1-fast", "veo3.1-pro"];
 
 const Home = ({
   drawData,
@@ -191,11 +204,7 @@ const Home = ({
       ? currentSize
       : availableSizes[0];
 
-    // Set default duration for sora-2 model
     const newData = { ...drawData, model: newModel, size: newSize };
-    if (newModel === "sora-2" && !drawData.duration) {
-      newData.duration = 10;
-    }
     if (
       newModel === "nano-banana-2-4k-cl" ||
       newModel === "nano-banana-pro-4k-vip"
@@ -486,9 +495,9 @@ const Home = ({
               </SelectValue>
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="sora-image">
+              <SelectItem value="gpt-image-2">
                 <div className="flex items-center gap-2">
-                  <span>sora-image</span>
+                  <span>gpt-image-2</span>
                 </div>
               </SelectItem>
               <SelectItem value="nano-banana-fast">
@@ -541,11 +550,6 @@ const Home = ({
                   <span>nano-banana-2-4k-cl</span>
                 </div>
               </SelectItem>
-              <SelectItem value="sora-2">
-                <div className="flex items-center gap-2">
-                  <span>sora-2</span>
-                </div>
-              </SelectItem>
               <SelectItem value="veo3.1-fast">
                 <div className="flex items-center gap-2">
                   <span>veo3.1-fast</span>
@@ -587,82 +591,6 @@ const Home = ({
             </SelectContent>
           </Select>
         </div>
-        {/* Duration option for sora-2 model */}
-        {drawData.model === "sora-2" && (
-          <div className="mb-3">
-            <div className="text-sm font-medium mb-2 text-foreground">
-              时长选项
-            </div>
-            <Select
-              value={drawData.duration?.toString() || "10"}
-              onValueChange={(value) =>
-                setDrawData({ ...drawData, duration: Number(value) })
-              }
-            >
-              <SelectTrigger className="w-full h-11 bg-input border-primary/50">
-                <SelectValue>
-                  <div className="flex items-center gap-2">
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      width="20"
-                      height="20"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    >
-                      <circle cx="12" cy="12" r="10" />
-                      <polyline points="12 6 12 12 16 14" />
-                    </svg>
-                    <span>{drawData.duration || 10}秒</span>
-                  </div>
-                </SelectValue>
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="10">
-                  <div className="flex items-center gap-2">
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      width="20"
-                      height="20"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    >
-                      <circle cx="12" cy="12" r="10" />
-                      <polyline points="12 6 12 12 16 14" />
-                    </svg>
-                    <span>10秒</span>
-                  </div>
-                </SelectItem>
-                <SelectItem value="15">
-                  <div className="flex items-center gap-2">
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      width="20"
-                      height="20"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    >
-                      <circle cx="12" cy="12" r="10" />
-                      <polyline points="12 6 12 12 16 14" />
-                    </svg>
-                    <span>15秒</span>
-                  </div>
-                </SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        )}
         {/* Image Size option for nano-banana-pro model */}
         {(drawData.model === "nano-banana-pro" ||
           drawData.model === "nano-banana-pro-vt" ||
