@@ -14,11 +14,14 @@ import "./chat-section.css";
 // Model size support mapping
 const MODEL_SIZE_MAP = {
   "gpt-image-2": [
+    "auto",
     "1:1",
     "3:2",
     "2:3",
     "16:9",
     "9:16",
+    "5:4",
+    "4:5",
     "4:3",
     "3:4",
     "21:9",
