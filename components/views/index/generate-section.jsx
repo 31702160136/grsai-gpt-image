@@ -105,14 +105,9 @@ const GenerateSection = () => {
       // 根据模型类型转换尺寸参数
       // 只有 gpt-image-2 使用size参数，其他模型使用aspectRatio参数
       const requestData = { ...drawData };
-      if (drawData.model === "gpt-image-2") {
-        requestData.size = drawData.size;
-      } else {
-        // 其他模型使用aspectRatio参数
-        requestData.aspectRatio = drawData.size;
-        // 删除size参数
-        delete requestData.size;
-      }
+      requestData.aspectRatio = drawData.size;
+      // 删除size参数
+      delete requestData.size;
 
       if (drawData.model.indexOf("veo") !== -1 && drawData.urls.length > 0) {
         requestData.firstFrameUrl = drawData.urls[0];
