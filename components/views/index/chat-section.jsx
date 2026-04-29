@@ -31,6 +31,24 @@ const MODEL_SIZE_MAP = {
     "2:1",
     "1:2",
   ],
+  "gpt-image-2-vip": [
+    "auto",
+    "1:1",
+    "3:2",
+    "2:3",
+    "16:9",
+    "9:16",
+    "5:4",
+    "4:5",
+    "4:3",
+    "3:4",
+    "21:9",
+    "9:21",
+    "1:3",
+    "3:1",
+    "2:1",
+    "1:2",
+  ],
   "nano-banana-fast": [
     "auto",
     "1:1",
@@ -501,6 +519,11 @@ const Home = ({
               <SelectItem value="gpt-image-2">
                 <div className="flex items-center gap-2">
                   <span>gpt-image-2</span>
+                </div>
+              </SelectItem>
+              <SelectItem value="gpt-image-2-vip">
+                <div className="flex items-center gap-2">
+                  <span>gpt-image-2-vip</span>
                 </div>
               </SelectItem>
               <SelectItem value="nano-banana-fast">
