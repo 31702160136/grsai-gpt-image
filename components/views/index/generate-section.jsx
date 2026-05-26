@@ -114,7 +114,7 @@ const GenerateSection = () => {
         requestData.firstFrameUrl = drawData.urls[0];
         delete requestData.urls;
       }
-      requestData.adapt=true
+      //requestData.adapt=true
 
       // Remove imageSize for models other than nano-banana-pro
       if (
