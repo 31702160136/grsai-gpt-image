@@ -241,6 +241,37 @@ const MODEL_SIZE_MAP = {
 // 视频模型列表
 const VIDEO_MODELS = ["veo3.1-fast", "veo3.1-pro"];
 
+const IMAGE_SIZE_MODELS = [
+  "nano-banana-pro",
+  "nano-banana-pro-vt",
+  "nano-banana-pro-cl",
+  "nano-banana-pro-vip",
+  "nano-banana-pro-4k-vip",
+  "nano-banana-2",
+  "nano-banana-2-cl",
+  "nano-banana-2-2k-cl",
+  "nano-banana-2-4k-cl",
+];
+
+const getAvailableImageSizes = (model) => {
+  if (
+    model === "nano-banana-2-4k-cl" ||
+    model === "nano-banana-pro-4k-vip"
+  ) {
+    return ["4K"];
+  }
+  if (model === "nano-banana-2-2k-cl") {
+    return ["2K"];
+  }
+  if (model === "nano-banana-2-cl" || model === "nano-banana-pro-cl") {
+    return ["1K"];
+  }
+  if (model === "nano-banana-pro-vip") {
+    return ["1K", "2K"];
+  }
+  return ["1K", "2K", "4K"];
+};
+
 // 像素尺寸对应的展示标签（比例、K 等级）
 const SIZE_LABEL_MAP = {
   "gpt-image-2": {
@@ -322,6 +353,17 @@ const Home = ({
 
   // 判断当前模型是否为视频模型
   const isVideoModel = VIDEO_MODELS.includes(drawData.model);
+  const availableImageSizes = getAvailableImageSizes(drawData.model);
+  const currentImageSize = availableImageSizes.includes(drawData.imageSize)
+    ? drawData.imageSize
+    : availableImageSizes[0];
+
+  useEffect(() => {
+    if (!IMAGE_SIZE_MODELS.includes(drawData.model)) return;
+    if (drawData.imageSize === currentImageSize) return;
+
+    setDrawData((prev) => ({ ...prev, imageSize: currentImageSize }));
+  }, [currentImageSize, drawData.imageSize, drawData.model, setDrawData]);
 
   // Get available sizes for the current model
   const getAvailableSizes = (model) => {
@@ -339,23 +381,11 @@ const Home = ({
       : availableSizes[0];
 
     const newData = { ...drawData, model: newModel, size: newSize };
-    if (
-      newModel === "nano-banana-2-4k-cl" ||
-      newModel === "nano-banana-pro-4k-vip"
-    ) {
-      newData.imageSize = "4K";
-    } else if (newModel === "nano-banana-2-2k-cl") {
-      newData.imageSize = "2K";
-    } else if (
-      (newModel === "nano-banana-pro" ||
-        newModel === "nano-banana-pro-vt" ||
-        newModel === "nano-banana-pro-cl" ||
-        newModel === "nano-banana-pro-vip" ||
-        newModel === "nano-banana-2" ||
-        newModel === "nano-banana-2-cl") &&
-      !drawData.imageSize
-    ) {
-      newData.imageSize = "1K";
+    if (IMAGE_SIZE_MODELS.includes(newModel)) {
+      const availableImageSizes = getAvailableImageSizes(newModel);
+      newData.imageSize = availableImageSizes.includes(drawData.imageSize)
+        ? drawData.imageSize
+        : availableImageSizes[0];
     }
 
     setDrawData(newData);
@@ -739,21 +769,13 @@ const Home = ({
           </Select>
         </div>
         {/* Image Size option for nano-banana-pro model */}
-        {(drawData.model === "nano-banana-pro" ||
-          drawData.model === "nano-banana-pro-vt" ||
-          drawData.model === "nano-banana-pro-cl" ||
-          drawData.model === "nano-banana-pro-vip" ||
-          drawData.model === "nano-banana-pro-4k-vip" ||
-          drawData.model === "nano-banana-2" ||
-          drawData.model === "nano-banana-2-cl" ||
-          drawData.model === "nano-banana-2-2k-cl" ||
-          drawData.model === "nano-banana-2-4k-cl") && (
+        {IMAGE_SIZE_MODELS.includes(drawData.model) && (
           <div className="mb-3">
             <div className="text-sm font-medium mb-2 text-foreground">
               imageSize参数
             </div>
             <Select
-              value={drawData.imageSize || "1K"}
+              value={currentImageSize}
               onValueChange={(value) =>
                 setDrawData({ ...drawData, imageSize: value })
               }
@@ -761,43 +783,18 @@ const Home = ({
               <SelectTrigger className="w-full h-11 bg-input border-primary/50">
                 <SelectValue>
                   <div className="flex items-center gap-2">
-                    <span>{drawData.imageSize || "1K"}</span>
+                    <span>{currentImageSize}</span>
                   </div>
                 </SelectValue>
               </SelectTrigger>
               <SelectContent>
-                {drawData.model !== "nano-banana-2-4k-cl" &&
-                  drawData.model !== "nano-banana-pro-4k-vip" &&
-                  drawData.model !== "nano-banana-2-2k-cl" && (
-                    <>
-                      <SelectItem value="1K">
-                        <div className="flex items-center gap-2">
-                          <span>1K</span>
-                        </div>
-                      </SelectItem>
-                      <SelectItem value="2K">
-                        <div className="flex items-center gap-2">
-                          <span>2K</span>
-                        </div>
-                      </SelectItem>
-                    </>
-                  )}
-                {drawData.model === "nano-banana-2-2k-cl" && (
-                  <SelectItem value="2K">
+                {availableImageSizes.map((imageSize) => (
+                  <SelectItem key={imageSize} value={imageSize}>
                     <div className="flex items-center gap-2">
-                      <span>2K</span>
+                      <span>{imageSize}</span>
                     </div>
                   </SelectItem>
-                )}
-                {drawData.model !== "nano-banana-2-cl" &&
-                  drawData.model !== "nano-banana-pro-vip" &&
-                  drawData.model !== "nano-banana-2-2k-cl" && (
-                    <SelectItem value="4K">
-                      <div className="flex items-center gap-2">
-                        <span>4K</span>
-                      </div>
-                    </SelectItem>
-                  )}
+                ))}
               </SelectContent>
             </Select>
           </div>
