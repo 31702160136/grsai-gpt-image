@@ -635,6 +635,9 @@ const Home = ({
                       </p>
                     </>
                   )}
+                  <p className="mt-3 rounded-full bg-primary/10 px-3 py-1 text-xs text-primary">
+                    提示：可以从左侧任务区拖动图片素材到这里
+                  </p>
                 </>
               )}
             </div>
