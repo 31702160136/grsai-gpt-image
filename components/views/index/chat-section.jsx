@@ -351,6 +351,25 @@ const Home = ({
 }) => {
   const [uploading, setUploading] = useState(false);
 
+  useEffect(() => {
+    const handlePaste = (event) => {
+      const imageFiles = Array.from(event.clipboardData?.items || [])
+        .filter(
+          (item) => item.kind === "file" && item.type.startsWith("image/"),
+        )
+        .map((item) => item.getAsFile())
+        .filter(Boolean);
+
+      if (imageFiles.length === 0) return;
+
+      event.preventDefault();
+      handleImageUpload({ target: { files: imageFiles } });
+    };
+
+    document.addEventListener("paste", handlePaste);
+    return () => document.removeEventListener("paste", handlePaste);
+  }, [handleImageUpload]);
+
   // 判断当前模型是否为视频模型
   const isVideoModel = VIDEO_MODELS.includes(drawData.model);
   const availableImageSizes = getAvailableImageSizes(drawData.model);
@@ -596,7 +615,7 @@ const Home = ({
                         点击上传图像
                       </p>
                       <p className="text-sm text-muted-foreground mt-1">
-                        或拖放图像到这里
+                        或拖放图像到这里，也可以直接粘贴
                       </p>
                       <p className="text-xs text-muted-foreground mt-2">
                         支持 JPG, JPEG, PNG, WEBP 格式

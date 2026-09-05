@@ -256,7 +256,8 @@ const ImagePreviewModal = memo(
               <img
                 src={previewImage.src}
                 alt={previewImage.alt}
-                className="max-w-full max-h-[90vh] object-contain rounded-lg shadow-2xl"
+                className="max-w-full max-h-[90vh] object-contain rounded-lg shadow-2xl cursor-pointer"
+                onClick={onClose}
               />
             )}
           </div>

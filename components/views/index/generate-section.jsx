@@ -1,12 +1,21 @@
 "use client";
 import Tasks from "./tasks-section";
 import ChatSection from "./chat-section";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
+
+const DEFAULT_SPLIT_PERCENT = 55;
+const MIN_PANE_WIDTH = 300;
+const RESIZER_WIDTH = 16;
+
 const GenerateSection = () => {
   const [tasks, setTasks] = useState([]);
   const [prompt, setPrompt] = useState();
   const [uploading, setUploading] = useState(false);
   const [isGenerate, setIsGenerate] = useState(false);
+  const [splitPercent, setSplitPercent] = useState(DEFAULT_SPLIT_PERCENT);
+  const [isResizing, setIsResizing] = useState(false);
+  const layoutRef = useRef(null);
+  const isResizingRef = useRef(false);
   const [drawData, setDrawData] = useState({
     prompt: ``,
     size: "auto",
@@ -17,13 +26,16 @@ const GenerateSection = () => {
   });
 
   const handleImageUpload = async (e) => {
+    const files = Array.from(e.target.files);
+    if (files.length === 0) return;
+
     // 限制上传图片数量
-    if (drawData.urls.length >= 8) {
+    if (drawData.urls.length + files.length > 8) {
       alert("最多只能上传8张图片");
       return;
     }
     // 限制图片大小
-    for (const file of e.target.files) {
+    for (const file of files) {
       if (file.size > 10 * 1024 * 1024) {
         alert("图片大小必须小于6MB");
         return;
@@ -32,15 +44,12 @@ const GenerateSection = () => {
     // 只允许图片格式，jpg, jpeg, png
     const allowedTypes = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
     // 检查所有上传的文件类型
-    for (const file of e.target.files) {
+    for (const file of files) {
       if (!allowedTypes.includes(file.type)) {
         alert("只允许上传 JPG, JPEG, PNG 和 WebP 文件");
         return;
       }
     }
-
-    const files = Array.from(e.target.files);
-    if (files.length === 0) return;
 
     for (const file of files) {
       try {
@@ -319,14 +328,99 @@ const GenerateSection = () => {
     }
   }, [tasks]);
 
+  const clampSplitPercent = (nextPercent) => {
+    const layoutWidth = layoutRef.current?.getBoundingClientRect().width;
+    if (!layoutWidth) {
+      return nextPercent;
+    }
+
+    const minPercent = (MIN_PANE_WIDTH / layoutWidth) * 100;
+    const maxPercent =
+      ((layoutWidth - MIN_PANE_WIDTH - RESIZER_WIDTH) / layoutWidth) * 100;
+
+    if (maxPercent < minPercent) {
+      return DEFAULT_SPLIT_PERCENT;
+    }
+
+    return Math.min(maxPercent, Math.max(minPercent, nextPercent));
+  };
+
+  const resizeFromPointer = (clientX) => {
+    const layoutRect = layoutRef.current?.getBoundingClientRect();
+    if (!layoutRect) return;
+
+    const nextPercent = ((clientX - layoutRect.left) / layoutRect.width) * 100;
+    setSplitPercent(clampSplitPercent(nextPercent));
+  };
+
+  const stopResizing = (event) => {
+    isResizingRef.current = false;
+    setIsResizing(false);
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+      event.currentTarget.releasePointerCapture(event.pointerId);
+    }
+  };
+
+  const handleResizeKeyDown = (event) => {
+    if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") return;
+
+    event.preventDefault();
+    const direction = event.key === "ArrowLeft" ? -1 : 1;
+    setSplitPercent((current) => clampSplitPercent(current + direction * 2));
+  };
+
   return (
     <>
       <div className="relative z-11 mt-2 m-auto">
-        <div className="flex backdrop-blur-[5px] gap-2 sm:gap-3 md:gap-4 rounded-2xl flex-col lg:flex-row w-full backdrop-filter">
-          <div className="w-full border border-primary/30 min-w-[300px] p-2 sm:p-3 md:p-4 bg-popover/50 rounded-lg shadow-sm lg:flex-[5]">
+        <div
+          ref={layoutRef}
+          className="flex backdrop-blur-[5px] gap-2 sm:gap-3 md:gap-4 lg:gap-0 rounded-2xl flex-col lg:grid w-full backdrop-filter"
+          style={{
+            gridTemplateColumns: `${splitPercent}% ${RESIZER_WIDTH}px minmax(${MIN_PANE_WIDTH}px, 1fr)`,
+          }}
+        >
+          <div className="w-full border border-primary/30 min-w-[300px] p-2 sm:p-3 md:p-4 bg-popover/50 rounded-lg shadow-sm">
             <Tasks tasks={tasks} setTasks={setTasks} />
           </div>
-          <div className="w-full flex flex-col border border-primary/30 p-2 sm:p-3 md:p-4 bg-popover/50 rounded-lg shadow-sm mb-3 lg:mb-0 lg:flex-[4]">
+          <div
+            role="separator"
+            aria-label="调整任务区和生成区宽度"
+            aria-orientation="vertical"
+            aria-valuemin={Math.round(
+              clampSplitPercent(0),
+            )}
+            aria-valuemax={Math.round(
+              clampSplitPercent(100),
+            )}
+            aria-valuenow={Math.round(splitPercent)}
+            tabIndex={0}
+            className={`group relative hidden lg:flex h-full cursor-col-resize touch-none items-center justify-center outline-none ${
+              isResizing ? "bg-primary/10" : ""
+            }`}
+            onPointerDown={(event) => {
+              event.preventDefault();
+              isResizingRef.current = true;
+              setIsResizing(true);
+              event.currentTarget.setPointerCapture(event.pointerId);
+              resizeFromPointer(event.clientX);
+            }}
+            onPointerMove={(event) => {
+              if (isResizingRef.current) {
+                resizeFromPointer(event.clientX);
+              }
+            }}
+            onPointerUp={stopResizing}
+            onPointerCancel={stopResizing}
+            onDoubleClick={() => setSplitPercent(DEFAULT_SPLIT_PERCENT)}
+            onKeyDown={handleResizeKeyDown}
+          >
+            <div
+              className={`h-12 w-1 rounded-full transition-colors group-hover:bg-primary/60 group-focus-visible:bg-primary ${
+                isResizing ? "bg-primary" : "bg-primary/25"
+              }`}
+            />
+          </div>
+          <div className="w-full min-w-0 flex flex-col border border-primary/30 p-2 sm:p-3 md:p-4 bg-popover/50 rounded-lg shadow-sm mb-3 lg:mb-0">
             <ChatSection
               drawData={drawData}
               setDrawData={setDrawData}
