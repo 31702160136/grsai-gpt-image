@@ -72,6 +72,24 @@ const GenerateSection = () => {
     }
   };
 
+  const handleTaskImageDrop = (imageUrl) => {
+    if (!imageUrl) return;
+
+    if (drawData.urls.length >= 8) {
+      alert("最多只能上传8张图片");
+      return;
+    }
+
+    setDrawData((prev) => {
+      if (prev.urls.length >= 8) return prev;
+
+      return {
+        ...prev,
+        urls: [...prev.urls, imageUrl],
+      };
+    });
+  };
+
   const getAPIKEY = () => {
     const savedApiKey = localStorage.getItem("apikey");
     return savedApiKey || process.env.API_KEY;
@@ -425,6 +443,7 @@ const GenerateSection = () => {
               drawData={drawData}
               setDrawData={setDrawData}
               handleImageUpload={handleImageUpload}
+              handleTaskImageDrop={handleTaskImageDrop}
               onGenerate={onGenerate}
               isGenerate={isGenerate}
             />

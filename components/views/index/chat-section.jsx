@@ -11,6 +11,8 @@ import {
 import { useState, useEffect } from "react";
 import "./chat-section.css";
 
+const TASK_IMAGE_DRAG_TYPE = "application/x-grsai-task-image";
+
 // Model size support mapping
 const MODEL_SIZE_MAP = {
   "gpt-image-2": [
@@ -346,6 +348,7 @@ const Home = ({
   drawData,
   setDrawData,
   handleImageUpload,
+  handleTaskImageDrop,
   onGenerate,
   isGenerate,
 }) => {
@@ -528,6 +531,7 @@ const Home = ({
           } rounded-lg p-6 text-center hover:border-primary transition-colors cursor-pointer`}
           onDragOver={(e) => {
             e.preventDefault();
+            e.dataTransfer.dropEffect = "copy";
             e.currentTarget.classList.add("border-primary", "bg-primary/10");
           }}
           onDragLeave={(e) => {
@@ -537,6 +541,15 @@ const Home = ({
           onDrop={(e) => {
             e.preventDefault();
             e.currentTarget.classList.remove("border-primary", "bg-primary/10");
+
+            const taskImageUrl = e.dataTransfer.getData(
+              TASK_IMAGE_DRAG_TYPE,
+            );
+            if (taskImageUrl) {
+              handleTaskImageDrop(taskImageUrl);
+              return;
+            }
+
             const files = Array.from(e.dataTransfer.files);
             if (files.some((file) => file.type.startsWith("image/"))) {
               const imageFiles = files.filter((file) =>

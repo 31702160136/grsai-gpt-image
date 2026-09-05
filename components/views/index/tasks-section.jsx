@@ -11,6 +11,7 @@ const MAX_SAVED_TASKS = 200;
 
 // 视频模型列表
 const VIDEO_MODELS = ["veo3.1-fast", "veo3.1-pro"];
+const TASK_IMAGE_DRAG_TYPE = "application/x-grsai-task-image";
 
 // 判断是否为视频模型
 const isVideoModel = (model) => {
@@ -30,12 +31,36 @@ const TaskItem = memo(
     onOpenPreview,
     getErrorMessage,
   }) => {
+    const canDrag =
+      !selectionMode &&
+      !isVideoModel(image.model) &&
+      Boolean(image.src) &&
+      !image.error;
+
     return (
       <div
         key={image.id}
-        className={`group relative ${selectionMode ? "cursor-pointer" : ""}`}
+        draggable={canDrag}
+        title={canDrag ? "拖动到右侧上传图片区域作为素材" : undefined}
+        className={`group relative ${
+          selectionMode
+            ? "cursor-pointer"
+            : canDrag
+              ? "cursor-grab active:cursor-grabbing"
+              : ""
+        }`}
         style={{
           animation: `fadeInUp 0.6s ease-out ${index * 100}ms forwards`,
+        }}
+        onDragStart={(event) => {
+          if (!canDrag) {
+            event.preventDefault();
+            return;
+          }
+
+          event.dataTransfer.effectAllowed = "copy";
+          event.dataTransfer.setData(TASK_IMAGE_DRAG_TYPE, image.src);
+          event.dataTransfer.setData("text/uri-list", image.src);
         }}
         onClick={(e) => {
           if (selectionMode) {
@@ -71,7 +96,8 @@ const TaskItem = memo(
                 <img
                   src={image.src}
                   alt={image.alt}
-                  className={`cursor-pointer w-full h-full object-cover transition-opacity duration-300`}
+                  draggable={false}
+                  className="w-full h-full object-cover transition-opacity duration-300"
                   onLoad={() => onImageLoad(index)}
                   onError={() => onImageError(index)}
                   loading="lazy"
