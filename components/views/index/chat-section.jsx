@@ -240,6 +240,10 @@ const MODEL_SIZE_MAP = {
   "veo3.1-pro": ["16:9", "9:16"],
 };
 
+MODEL_SIZE_MAP["gpt-image-2.5"] = MODEL_SIZE_MAP["gpt-image-2"];
+MODEL_SIZE_MAP["gpt-image-2.5-flare"] = MODEL_SIZE_MAP["gpt-image-2-vip"];
+MODEL_SIZE_MAP["gpt-image-2.5-sunburst"] = MODEL_SIZE_MAP["gpt-image-2-vip"];
+
 // 视频模型列表
 const VIDEO_MODELS = ["veo3.1-fast", "veo3.1-pro"];
 
@@ -337,6 +341,10 @@ const SIZE_LABEL_MAP = {
     "1920x3840": "1920x3840 (1:2, 4K)",
   },
 };
+
+SIZE_LABEL_MAP["gpt-image-2.5"] = SIZE_LABEL_MAP["gpt-image-2"];
+SIZE_LABEL_MAP["gpt-image-2.5-flare"] = SIZE_LABEL_MAP["gpt-image-2-vip"];
+SIZE_LABEL_MAP["gpt-image-2.5-sunburst"] = SIZE_LABEL_MAP["gpt-image-2-vip"];
 
 // 根据模型与尺寸获取展示标签（仍使用原始尺寸值发送请求）
 const getSizeLabel = (model, size) => {
@@ -705,6 +713,21 @@ const Home = ({
               <SelectItem value="gpt-image-2-vip">
                 <div className="flex items-center gap-2">
                   <span>gpt-image-2-vip</span>
+                </div>
+              </SelectItem>
+              <SelectItem value="gpt-image-2.5">
+                <div className="flex items-center gap-2">
+                  <span>gpt-image-2.5</span>
+                </div>
+              </SelectItem>
+              <SelectItem value="gpt-image-2.5-flare">
+                <div className="flex items-center gap-2">
+                  <span>gpt-image-2.5-flare</span>
+                </div>
+              </SelectItem>
+              <SelectItem value="gpt-image-2.5-sunburst">
+                <div className="flex items-center gap-2">
+                  <span>gpt-image-2.5-sunburst</span>
                 </div>
               </SelectItem>
               <SelectItem value="nano-banana-fast">

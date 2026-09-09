@@ -102,6 +102,9 @@ const GenerateSection = () => {
     const endpointMap = {
       "gpt-image-2": `${baseUrl}/v1/draw/completions`,
       "gpt-image-2-vip": `${baseUrl}/v1/draw/completions`,
+      "gpt-image-2.5": `${baseUrl}/v1/draw/completions`,
+      "gpt-image-2.5-flare": `${baseUrl}/v1/draw/completions`,
+      "gpt-image-2.5-sunburst": `${baseUrl}/v1/draw/completions`,
       "nano-banana-fast": `${baseUrl}/v1/draw/nano-banana`,
       "nano-banana": `${baseUrl}/v1/draw/nano-banana`,
       "nano-banana-pro": `${baseUrl}/v1/draw/nano-banana`,
