@@ -811,6 +811,11 @@ const Home = ({
               </SelectItem>
             </SelectContent>
           </Select>
+          {isVideoModel && (
+            <p className="mt-2 rounded-md border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-sm text-amber-700 dark:text-amber-300">
+              备注：需要专业提示词精确控制来使用
+            </p>
+          )}
         </div>
         <div className="mb-3">
           <div className="text-sm font-medium mb-2 text-foreground">
