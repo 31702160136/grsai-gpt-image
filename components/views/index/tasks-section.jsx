@@ -10,7 +10,7 @@ const LOCAL_STORAGE_KEY = "savedTasks";
 const MAX_SAVED_TASKS = 200;
 
 // 视频模型列表
-const VIDEO_MODELS = ["veo3.1-fast", "veo3.1-pro"];
+const VIDEO_MODELS = ["veo3.1-fast", "veo3.1-pro", "minimax-h3"];
 const TASK_IMAGE_DRAG_TYPE = "application/x-grsai-task-image";
 
 // 判断是否为视频模型

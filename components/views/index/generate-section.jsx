@@ -6,6 +6,13 @@ import { useState, useEffect, useRef } from "react";
 const DEFAULT_SPLIT_PERCENT = 55;
 const MIN_PANE_WIDTH = 300;
 const RESIZER_WIDTH = 16;
+const API_BASE_URL = "https://grsai.dakka.com.cn";
+const NANO_BANANA_MODEL_PREFIX = "nano-banana";
+const MINIMAX_H3_MODEL = "minimax-h3";
+
+const isNanoBananaModel = (model) =>
+  model?.startsWith(NANO_BANANA_MODEL_PREFIX);
+const isMinimaxH3Model = (model) => model === MINIMAX_H3_MODEL;
 
 const GenerateSection = () => {
   const [tasks, setTasks] = useState([]);
@@ -22,6 +29,10 @@ const GenerateSection = () => {
     variants: 1,
     model: "gpt-image-2",
     urls: [],
+    audios: [],
+    resolution: "768p",
+    duration: 10,
+    seed: 1000,
     webHook: "-1",
   });
 
@@ -30,8 +41,9 @@ const GenerateSection = () => {
     if (files.length === 0) return;
 
     // 限制上传图片数量
-    if (drawData.urls.length + files.length > 8) {
-      alert("最多只能上传8张图片");
+    const maxImages = isMinimaxH3Model(drawData.model) ? 9 : 8;
+    if (drawData.urls.length + files.length > maxImages) {
+      alert(`最多只能上传${maxImages}张图片`);
       return;
     }
     // 限制图片大小
@@ -75,13 +87,15 @@ const GenerateSection = () => {
   const handleTaskImageDrop = (imageUrl) => {
     if (!imageUrl) return;
 
-    if (drawData.urls.length >= 8) {
-      alert("最多只能上传8张图片");
+    const maxImages = isMinimaxH3Model(drawData.model) ? 9 : 8;
+    if (drawData.urls.length >= maxImages) {
+      alert(`最多只能上传${maxImages}张图片`);
       return;
     }
 
     setDrawData((prev) => {
-      if (prev.urls.length >= 8) return prev;
+      const limit = isMinimaxH3Model(prev.model) ? 9 : 8;
+      if (prev.urls.length >= limit) return prev;
 
       return {
         ...prev,
@@ -90,36 +104,34 @@ const GenerateSection = () => {
     });
   };
 
+  const handleAudioUpload = (e) => {
+    const files = Array.from(e.target.files || []);
+    if (files.length === 0) return;
+    if (drawData.audios.length + files.length > 3) {
+      alert("最多只能上传3个音频");
+      return;
+    }
+    if (files.some((file) => !file.type.startsWith("audio/"))) {
+      alert("请选择有效的音频文件");
+      return;
+    }
+
+    files.forEach((file) => {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        setDrawData((prev) => {
+          if (prev.audios.length >= 3) return prev;
+          return { ...prev, audios: [...prev.audios, event.target.result] };
+        });
+      };
+      reader.onerror = () => alert(`读取音频 ${file.name} 失败`);
+      reader.readAsDataURL(file);
+    });
+  };
+
   const getAPIKEY = () => {
     const savedApiKey = localStorage.getItem("apikey");
     return savedApiKey || process.env.API_KEY;
-  };
-
-  const getAPIEndpoint = (model) => {
-    const baseUrl = "https://grsai.dakka.com.cn";
-    // const baseUrl = "http://127.0.0.1:13002";
-    // const baseUrl = "http://114.66.27.18:13050";
-    const endpointMap = {
-      "gpt-image-2": `${baseUrl}/v1/draw/completions`,
-      "gpt-image-2-vip": `${baseUrl}/v1/draw/completions`,
-      "gpt-image-2.5": `${baseUrl}/v1/draw/completions`,
-      "gpt-image-2.5-flare": `${baseUrl}/v1/draw/completions`,
-      "gpt-image-2.5-sunburst": `${baseUrl}/v1/draw/completions`,
-      "nano-banana-fast": `${baseUrl}/v1/draw/nano-banana`,
-      "nano-banana": `${baseUrl}/v1/draw/nano-banana`,
-      "nano-banana-pro": `${baseUrl}/v1/draw/nano-banana`,
-      "nano-banana-pro-vt": `${baseUrl}/v1/draw/nano-banana`,
-      "nano-banana-pro-cl": `${baseUrl}/v1/draw/nano-banana`,
-      "nano-banana-pro-vip": `${baseUrl}/v1/draw/nano-banana`,
-      "nano-banana-pro-4k-vip": `${baseUrl}/v1/draw/nano-banana`,
-      "nano-banana-2": `${baseUrl}/v1/draw/nano-banana`,
-      "nano-banana-2-cl": `${baseUrl}/v1/draw/nano-banana`,
-      "nano-banana-2-2k-cl": `${baseUrl}/v1/draw/nano-banana`,
-      "nano-banana-2-4k-cl": `${baseUrl}/v1/draw/nano-banana`,
-      "veo3.1-fast": `${baseUrl}/v1/video/veo`,
-      "veo3.1-pro": `${baseUrl}/v1/video/veo`,
-    };
-    return endpointMap[model] || `${baseUrl}/v1/draw/completions`;
   };
 
   async function onGenerate() {
@@ -132,20 +144,56 @@ const GenerateSection = () => {
     }
     setIsGenerate(true);
     try {
-      const apiEndpoint = getAPIEndpoint(drawData.model);
-
-      // 根据模型类型转换尺寸参数
-      // 只有 gpt-image-2 使用size参数，其他模型使用aspectRatio参数
-      const requestData = { ...drawData };
-      requestData.aspectRatio = drawData.size;
-      // 删除size参数
-      delete requestData.size;
-
-      if (drawData.model.indexOf("veo") !== -1 && drawData.urls.length > 0) {
-        requestData.firstFrameUrl = drawData.urls[0];
-        delete requestData.urls;
+      if (isMinimaxH3Model(drawData.model)) {
+        if (!drawData.prompt.trim()) {
+          throw new Error("minimax-h3 必须填写提示词");
+        }
+        if (
+          !Number.isInteger(Number(drawData.duration)) ||
+          Number(drawData.duration) < 1 ||
+          Number(drawData.duration) > 15
+        ) {
+          throw new Error("视频时长必须是 1~15 秒的整数");
+        }
+        if (
+          drawData.resolution === "1080p" &&
+          Number(drawData.duration) > 10
+        ) {
+          throw new Error("1080p 视频时长最多为 10 秒");
+        }
+        if (
+          String(drawData.seed).trim() === "" ||
+          !Number.isInteger(Number(drawData.seed))
+        ) {
+          throw new Error("随机种子必须是整数");
+        }
       }
-      //requestData.adapt=true
+
+      // 新版异步接口只接收明确支持的字段，避免发送旧接口参数
+      const requestData = {
+        model: drawData.model,
+        prompt: drawData.prompt,
+        images: drawData.urls,
+        aspectRatio: drawData.size,
+        replyType: "async",
+      };
+      if (isMinimaxH3Model(drawData.model)) {
+        Object.assign(requestData, {
+          audios: drawData.audios,
+          resolution: drawData.resolution,
+          duration: Number(drawData.duration),
+          seed: Number(drawData.seed),
+        });
+      }
+      if (isNanoBananaModel(drawData.model) && drawData.imageSize) {
+        requestData.imageSize = drawData.imageSize;
+      }
+      if (drawData.quality) {
+        requestData.quality = drawData.quality;
+      }
+      if (drawData.background) {
+        requestData.background = drawData.background;
+      }
 
       // Remove imageSize for models other than nano-banana-pro
       if (
@@ -162,7 +210,7 @@ const GenerateSection = () => {
         delete requestData.imageSize;
       }
 
-      const res = await fetch(apiEndpoint, {
+      const res = await fetch(`${API_BASE_URL}/v1/api/generate`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -173,14 +221,18 @@ const GenerateSection = () => {
       });
       setIsGenerate(false);
       if (!res.ok) {
-        throw new Error(`HTTP error! status: ${res.status}`);
+        const errorData = await res.json().catch(() => null);
+        throw new Error(
+          errorData?.error ||
+            errorData?.msg ||
+            `HTTP error! status: ${res.status}`,
+        );
       }
       const data = await res.json();
-      if (data.code !== 0) {
-        alert(data.msg);
-        return;
+      if (!data.id || data.status === "failed" || data.status === "violation") {
+        throw new Error(data.error || "创建生成任务失败");
       }
-      const taskId = data.data.id;
+      const taskId = data.id;
 
       const newTask = {
         id: taskId,
@@ -191,7 +243,7 @@ const GenerateSection = () => {
         progress: 0,
         src: "",
         alt: `Generated Image ${taskId}`,
-        model: drawData.model, // Save model to determine if it's a video or image
+        model: drawData.model,
       };
 
       // Add new task to the beginning of the tasks array
@@ -201,6 +253,7 @@ const GenerateSection = () => {
     } catch (error) {
       setIsGenerate(false);
       console.error("Error generating image:", error);
+      alert(error.message || "生成任务创建失败");
     } finally {
       setIsGenerate(false);
     }
@@ -245,22 +298,20 @@ const GenerateSection = () => {
   }
 
   async function handleTask(id) {
-    const baseUrl = "https://grsai.dakka.com.cn";
-    // const baseUrl = "http://127.0.0.1:13002";
-    // const baseUrl = "http://114.66.27.18:13050";
     while (true) {
-      const res = await fetch(`${baseUrl}/v1/draw/result`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: "Bearer " + getAPIKEY(),
+      const res = await fetch(
+        `${API_BASE_URL}/v1/api/result?id=${encodeURIComponent(id)}`,
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: "Bearer " + getAPIKEY(),
+          },
+          cache: "no-store",
         },
-        body: JSON.stringify({
-          id,
-        }),
-      });
-      const result = await res.json();
-      if (result.code === -22) {
+      );
+      const result = await res.json().catch(() => null);
+      if (!res.ok || !result) {
         setTasks((prev) =>
           prev.map((task) => {
             if (task.id === id) {
@@ -268,8 +319,11 @@ const GenerateSection = () => {
                 ...task,
                 finish: true,
                 progress: 100,
-                error: "超时",
-                failureReason: "超时",
+                error:
+                  result?.error ||
+                  result?.msg ||
+                  `查询任务失败（HTTP ${res.status}）`,
+                failureReason: result?.status || "查询任务失败",
               };
             }
             return task;
@@ -277,11 +331,7 @@ const GenerateSection = () => {
         );
         break;
       }
-      if (result.code !== 0) {
-        alert(result.msg);
-        break;
-      }
-      const data = result.data;
+      const data = result;
       if (data.status === "running") {
         setTasks((prev) =>
           prev.map((task) => {
@@ -318,7 +368,7 @@ const GenerateSection = () => {
         );
         break;
       }
-      if (data.status === "failed") {
+      if (data.status === "failed" || data.status === "violation") {
         setTasks((prev) =>
           prev.map((task) => {
             if (task.id === id) {
@@ -326,7 +376,9 @@ const GenerateSection = () => {
                 ...task,
                 finish: true,
                 progress: 100,
-                failureReason: data.failure_reason,
+                failureReason:
+                  data.failure_reason ||
+                  (data.status === "violation" ? "内容违规" : "生成失败"),
                 error: data.error,
               };
             }
@@ -335,6 +387,21 @@ const GenerateSection = () => {
         );
         break;
       }
+
+      setTasks((prev) =>
+        prev.map((task) =>
+          task.id === id
+            ? {
+                ...task,
+                finish: true,
+                progress: 100,
+                failureReason: `未知任务状态：${data.status || "empty"}`,
+                error: data.error || "查询任务返回了未知状态",
+              }
+            : task,
+        ),
+      );
+      break;
     }
   }
 
@@ -446,6 +513,7 @@ const GenerateSection = () => {
               drawData={drawData}
               setDrawData={setDrawData}
               handleImageUpload={handleImageUpload}
+              handleAudioUpload={handleAudioUpload}
               handleTaskImageDrop={handleTaskImageDrop}
               onGenerate={onGenerate}
               isGenerate={isGenerate}

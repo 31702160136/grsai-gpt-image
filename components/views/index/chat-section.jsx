@@ -1,5 +1,6 @@
 "use client";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
@@ -12,6 +13,7 @@ import { useState, useEffect } from "react";
 import "./chat-section.css";
 
 const TASK_IMAGE_DRAG_TYPE = "application/x-grsai-task-image";
+const MINIMAX_H3_MODEL = "minimax-h3";
 
 // Model size support mapping
 const MODEL_SIZE_MAP = {
@@ -236,16 +238,12 @@ const MODEL_SIZE_MAP = {
     "1:8",
     "8:1",
   ],
-  "veo3.1-fast": ["16:9", "9:16"],
-  "veo3.1-pro": ["16:9", "9:16"],
+  [MINIMAX_H3_MODEL]: ["portrait", "landscape", "square"],
 };
 
 MODEL_SIZE_MAP["gpt-image-2.5"] = MODEL_SIZE_MAP["gpt-image-2"];
 MODEL_SIZE_MAP["gpt-image-2.5-flare"] = MODEL_SIZE_MAP["gpt-image-2-vip"];
 MODEL_SIZE_MAP["gpt-image-2.5-sunburst"] = MODEL_SIZE_MAP["gpt-image-2-vip"];
-
-// 视频模型列表
-const VIDEO_MODELS = ["veo3.1-fast", "veo3.1-pro"];
 
 const IMAGE_SIZE_MODELS = [
   "nano-banana-pro",
@@ -356,11 +354,14 @@ const Home = ({
   drawData,
   setDrawData,
   handleImageUpload,
+  handleAudioUpload,
   handleTaskImageDrop,
   onGenerate,
   isGenerate,
 }) => {
   const [uploading, setUploading] = useState(false);
+  const [audioUrl, setAudioUrl] = useState("");
+  const isVideoModel = drawData.model === MINIMAX_H3_MODEL;
 
   useEffect(() => {
     const handlePaste = (event) => {
@@ -381,8 +382,6 @@ const Home = ({
     return () => document.removeEventListener("paste", handlePaste);
   }, [handleImageUpload]);
 
-  // 判断当前模型是否为视频模型
-  const isVideoModel = VIDEO_MODELS.includes(drawData.model);
   const availableImageSizes = getAvailableImageSizes(drawData.model);
   const currentImageSize = availableImageSizes.includes(drawData.imageSize)
     ? drawData.imageSize
@@ -411,6 +410,14 @@ const Home = ({
       : availableSizes[0];
 
     const newData = { ...drawData, model: newModel, size: newSize };
+    if (newModel === MINIMAX_H3_MODEL) {
+      newData.resolution = drawData.resolution || "768p";
+      newData.duration = drawData.duration || 10;
+      newData.seed = Number.isInteger(Number(drawData.seed))
+        ? Number(drawData.seed)
+        : 1000;
+      newData.audios = drawData.audios || [];
+    }
     if (IMAGE_SIZE_MODELS.includes(newModel)) {
       const availableImageSizes = getAvailableImageSizes(newModel);
       newData.imageSize = availableImageSizes.includes(drawData.imageSize)
@@ -440,6 +447,21 @@ const Home = ({
           <polyline points="8 7 3 12 8 17" />
           <line x1="10" x2="14" y1="12" y2="12" />
         </svg>
+      );
+    }
+
+    if (["portrait", "landscape", "square"].includes(size)) {
+      const dimensions = {
+        portrait: [12, 20],
+        landscape: [20, 12],
+        square: [18, 18],
+      };
+      const [boxWidth, boxHeight] = dimensions[size];
+      return (
+        <div
+          className="border-[1.5px] border-solid border-current bg-transparent"
+          style={{ width: boxWidth, height: boxHeight }}
+        />
       );
     }
 
@@ -670,7 +692,7 @@ const Home = ({
             </svg>
             <span>
               {isVideoModel
-                ? "输入指令以生成视频"
+                ? "输入指令并添加可选素材以生成视频"
                 : "上传图像进行编辑或输入指令以生成新图像"}
             </span>
           </div>
@@ -785,14 +807,9 @@ const Home = ({
                   <span>nano-banana-2-4k-cl</span>
                 </div>
               </SelectItem>
-              <SelectItem value="veo3.1-fast">
+              <SelectItem value={MINIMAX_H3_MODEL}>
                 <div className="flex items-center gap-2">
-                  <span>veo3.1-fast</span>
-                </div>
-              </SelectItem>
-              <SelectItem value="veo3.1-pro">
-                <div className="flex items-center gap-2">
-                  <span>veo3.1-pro</span>
+                  <span>minimax-h3（视频）</span>
                 </div>
               </SelectItem>
             </SelectContent>
@@ -857,8 +874,176 @@ const Home = ({
             </Select>
           </div>
         )}
+        {isVideoModel && (
+          <>
+            <div className="mb-3">
+              <div className="text-sm font-medium mb-2 text-foreground">
+                分辨率
+              </div>
+              <Select
+                value={drawData.resolution}
+                onValueChange={(resolution) =>
+                  setDrawData((prev) => ({
+                    ...prev,
+                    resolution,
+                    duration:
+                      resolution === "1080p" && Number(prev.duration) > 10
+                        ? 10
+                        : prev.duration,
+                  }))
+                }
+              >
+                <SelectTrigger className="w-full h-11 bg-input border-primary/50">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {["480p", "768p", "1080p"].map((resolution) => (
+                    <SelectItem key={resolution} value={resolution}>
+                      {resolution}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
+              <div>
+                <label
+                  htmlFor="minimax-duration"
+                  className="block text-sm font-medium mb-2 text-foreground"
+                >
+                  视频时长（秒）
+                </label>
+                <Input
+                  id="minimax-duration"
+                  type="number"
+                  min={1}
+                  max={drawData.resolution === "1080p" ? 10 : 15}
+                  step={1}
+                  value={drawData.duration}
+                  onChange={(event) =>
+                    setDrawData({
+                      ...drawData,
+                      duration: event.target.value,
+                    })
+                  }
+                  className="h-11 bg-input border-primary/50"
+                />
+              </div>
+              <div>
+                <label
+                  htmlFor="minimax-seed"
+                  className="block text-sm font-medium mb-2 text-foreground"
+                >
+                  随机种子
+                </label>
+                <Input
+                  id="minimax-seed"
+                  type="number"
+                  step={1}
+                  value={drawData.seed}
+                  onChange={(event) =>
+                    setDrawData({ ...drawData, seed: event.target.value })
+                  }
+                  className="h-11 bg-input border-primary/50"
+                />
+              </div>
+            </div>
+            <div className="mb-3 rounded-lg border border-primary/30 p-3">
+              <div className="flex items-center justify-between gap-2 mb-2">
+                <span className="text-sm font-medium text-foreground">
+                  参考音频
+                </span>
+                <span className="text-xs text-muted-foreground">
+                  {drawData.audios.length}/3
+                </span>
+              </div>
+              {drawData.audios.length > 0 && (
+                <div className="space-y-2 mb-3">
+                  {drawData.audios.map((audio, index) => (
+                    <div
+                      key={`${audio.slice(0, 32)}-${index}`}
+                      className="flex items-center gap-2"
+                    >
+                      <audio
+                        controls
+                        preload="metadata"
+                        src={audio}
+                        className="h-9 min-w-0 flex-1"
+                      />
+                      <Button
+                        type="button"
+                        variant="outline"
+                        className="h-9 shrink-0"
+                        onClick={() =>
+                          setDrawData((prev) => ({
+                            ...prev,
+                            audios: prev.audios.filter((_, i) => i !== index),
+                          }))
+                        }
+                      >
+                        删除
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              <div className="flex flex-col sm:flex-row gap-2">
+                <Input
+                  type="file"
+                  accept="audio/*"
+                  multiple
+                  disabled={drawData.audios.length >= 3}
+                  onChange={(event) => {
+                    handleAudioUpload(event);
+                    event.target.value = "";
+                  }}
+                  className="h-11 flex-1 bg-input border-primary/50"
+                />
+              </div>
+              <div className="flex flex-col sm:flex-row gap-2 mt-2">
+                <Input
+                  type="url"
+                  value={audioUrl}
+                  placeholder="或输入音频 URL"
+                  disabled={drawData.audios.length >= 3}
+                  onChange={(event) => setAudioUrl(event.target.value)}
+                  className="h-11 flex-1 bg-input border-primary/50"
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  disabled={!audioUrl.trim() || drawData.audios.length >= 3}
+                  onClick={() => {
+                    try {
+                      const url = new URL(audioUrl.trim());
+                      if (!["http:", "https:"].includes(url.protocol)) {
+                        throw new Error();
+                      }
+                      setDrawData((prev) => ({
+                        ...prev,
+                        audios: [...prev.audios, url.toString()],
+                      }));
+                      setAudioUrl("");
+                    } catch {
+                      alert("请输入有效的 HTTP(S) 音频链接");
+                    }
+                  }}
+                >
+                  添加链接
+                </Button>
+              </div>
+              <p className="mt-2 text-xs text-muted-foreground">
+                支持 Base64 文件或 URL，最多 3 个音频
+              </p>
+            </div>
+          </>
+        )}
         <Textarea
-          placeholder="Tell us how you want to edit the image"
+          placeholder={
+            isVideoModel
+              ? "请输入视频内容、镜头、对白和声音等要求"
+              : "Tell us how you want to edit the image"
+          }
           className="resize-none h-[100px] text-foreground p-2 border-primary/50 bg-input"
           rows={4}
           value={drawData.prompt}
@@ -869,7 +1054,9 @@ const Home = ({
       <Button
         className="w-full cursor-pointer h-11 bg-primary hover:bg-primary/80 border border-primary/20 transition-all duration-300 text-primary-foreground"
         disabled={
-          (!drawData.prompt && drawData.urls.length === 0) ||
+          (isVideoModel
+            ? !drawData.prompt.trim()
+            : !drawData.prompt && drawData.urls.length === 0) ||
           uploading ||
           isGenerate
         }
