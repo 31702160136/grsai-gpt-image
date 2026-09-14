@@ -413,9 +413,6 @@ const Home = ({
     if (newModel === MINIMAX_H3_MODEL) {
       newData.resolution = drawData.resolution || "768p";
       newData.duration = drawData.duration || 10;
-      newData.seed = Number.isInteger(Number(drawData.seed))
-        ? Number(drawData.seed)
-        : 1000;
       newData.audios = drawData.audios || [];
     }
     if (IMAGE_SIZE_MODELS.includes(newModel)) {
@@ -905,7 +902,7 @@ const Home = ({
                 </SelectContent>
               </Select>
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
+            <div className="mb-3">
               <div>
                 <label
                   htmlFor="minimax-duration"
@@ -925,24 +922,6 @@ const Home = ({
                       ...drawData,
                       duration: event.target.value,
                     })
-                  }
-                  className="h-11 bg-input border-primary/50"
-                />
-              </div>
-              <div>
-                <label
-                  htmlFor="minimax-seed"
-                  className="block text-sm font-medium mb-2 text-foreground"
-                >
-                  随机种子
-                </label>
-                <Input
-                  id="minimax-seed"
-                  type="number"
-                  step={1}
-                  value={drawData.seed}
-                  onChange={(event) =>
-                    setDrawData({ ...drawData, seed: event.target.value })
                   }
                   className="h-11 bg-input border-primary/50"
                 />

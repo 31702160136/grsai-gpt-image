@@ -32,7 +32,6 @@ const GenerateSection = () => {
     audios: [],
     resolution: "768p",
     duration: 10,
-    seed: 1000,
     webHook: "-1",
   });
 
@@ -161,12 +160,6 @@ const GenerateSection = () => {
         ) {
           throw new Error("1080p 视频时长最多为 10 秒");
         }
-        if (
-          String(drawData.seed).trim() === "" ||
-          !Number.isInteger(Number(drawData.seed))
-        ) {
-          throw new Error("随机种子必须是整数");
-        }
       }
 
       // 新版异步接口只接收明确支持的字段，避免发送旧接口参数
@@ -182,7 +175,6 @@ const GenerateSection = () => {
           audios: drawData.audios,
           resolution: drawData.resolution,
           duration: Number(drawData.duration),
-          seed: Number(drawData.seed),
         });
       }
       if (isNanoBananaModel(drawData.model) && drawData.imageSize) {
