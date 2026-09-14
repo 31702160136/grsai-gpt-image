@@ -14,6 +14,7 @@ import "./chat-section.css";
 
 const TASK_IMAGE_DRAG_TYPE = "application/x-grsai-task-image";
 const MINIMAX_H3_MODEL = "minimax-h3";
+const SHOW_MINIMAX_H3_MODEL = false;
 
 // Model size support mapping
 const MODEL_SIZE_MAP = {
@@ -804,11 +805,13 @@ const Home = ({
                   <span>nano-banana-2-4k-cl</span>
                 </div>
               </SelectItem>
-              <SelectItem value={MINIMAX_H3_MODEL}>
-                <div className="flex items-center gap-2">
-                  <span>minimax-h3（视频）</span>
-                </div>
-              </SelectItem>
+              {SHOW_MINIMAX_H3_MODEL && (
+                <SelectItem value={MINIMAX_H3_MODEL}>
+                  <div className="flex items-center gap-2">
+                    <span>minimax-h3（视频）</span>
+                  </div>
+                </SelectItem>
+              )}
             </SelectContent>
           </Select>
           {isVideoModel && (
