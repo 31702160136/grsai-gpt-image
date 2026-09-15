@@ -14,7 +14,7 @@ import "./chat-section.css";
 
 const TASK_IMAGE_DRAG_TYPE = "application/x-grsai-task-image";
 const MINIMAX_H3_MODEL = "minimax-h3";
-const SHOW_MINIMAX_H3_MODEL = false;
+const SHOW_MINIMAX_H3_MODEL = true;
 
 // Model size support mapping
 const MODEL_SIZE_MAP = {
