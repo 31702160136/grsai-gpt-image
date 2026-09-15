@@ -225,7 +225,6 @@ const GenerateSection = () => {
       });
       setIsGenerate(false);
       const data = await res.json().catch(() => null);
-      console.log(data);
       if (
         data?.status === "failed" ||
         data?.status === "violation" ||
