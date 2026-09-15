@@ -415,6 +415,7 @@ const Home = ({
       newData.resolution = drawData.resolution || "768p";
       newData.duration = drawData.duration || 10;
       newData.audios = drawData.audios || [];
+      newData.seed = drawData.seed ?? "";
     }
     if (IMAGE_SIZE_MODELS.includes(newModel)) {
       const availableImageSizes = getAvailableImageSizes(newModel);
@@ -934,6 +935,33 @@ const Home = ({
                   className="h-11 bg-input border-primary/50"
                 />
               </div>
+            </div>
+            <div className="mb-3">
+              <label
+                htmlFor="minimax-seed"
+                className="block text-sm font-medium mb-2 text-foreground"
+              >
+                Seed 种子
+              </label>
+              <Input
+                id="minimax-seed"
+                type="number"
+                min={0}
+                max={4294967295}
+                step={1}
+                value={drawData.seed}
+                placeholder="留空则每次随机"
+                onChange={(event) =>
+                  setDrawData({
+                    ...drawData,
+                    seed: event.target.value,
+                  })
+                }
+                className="h-11 bg-input border-primary/50"
+              />
+              <p className="mt-1 text-xs text-muted-foreground">
+                输入 0~4294967295 的整数可固定生成结果
+              </p>
             </div>
             <div className="mb-3 rounded-lg border border-primary/30 p-3">
               <div className="flex items-center justify-between gap-2 mb-2">

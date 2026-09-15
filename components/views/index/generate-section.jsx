@@ -32,6 +32,7 @@ const GenerateSection = () => {
     audios: [],
     resolution: "768p",
     duration: 10,
+    seed: "",
     webHook: "-1",
   });
 
@@ -160,6 +161,14 @@ const GenerateSection = () => {
         ) {
           throw new Error("1080p 视频时长最多为 10 秒");
         }
+        if (
+          String(drawData.seed).trim() !== "" &&
+          (!Number.isInteger(Number(drawData.seed)) ||
+            Number(drawData.seed) < 0 ||
+            Number(drawData.seed) > 4294967295)
+        ) {
+          throw new Error("Seed 必须是 0~4294967295 之间的整数");
+        }
       }
 
       // 新版异步接口只接收明确支持的字段，避免发送旧接口参数
@@ -176,6 +185,9 @@ const GenerateSection = () => {
           resolution: drawData.resolution,
           duration: Number(drawData.duration),
         });
+        if (String(drawData.seed).trim() !== "") {
+          requestData.seed = Number(drawData.seed);
+        }
       }
       if (isNanoBananaModel(drawData.model) && drawData.imageSize) {
         requestData.imageSize = drawData.imageSize;
@@ -212,17 +224,21 @@ const GenerateSection = () => {
         cache: "no-store",
       });
       setIsGenerate(false);
-      if (!res.ok) {
-        const errorData = await res.json().catch(() => null);
+      const data = await res.json().catch(() => null);
+      console.log(data);
+      if (
+        data?.status === "failed" ||
+        data?.status === "violation" ||
+        !res.ok
+      ) {
         throw new Error(
-          errorData?.error ||
-            errorData?.msg ||
+          data?.error ||
+            data?.msg ||
             `HTTP error! status: ${res.status}`,
         );
       }
-      const data = await res.json();
-      if (!data.id || data.status === "failed" || data.status === "violation") {
-        throw new Error(data.error || "创建生成任务失败");
+      if (!data?.id) {
+        throw new Error(data?.error || data?.msg || "创建生成任务失败");
       }
       const taskId = data.id;
 
