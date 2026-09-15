@@ -816,7 +816,7 @@ const Home = ({
           </Select>
           {isVideoModel && (
             <p className="mt-2 rounded-md border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-sm text-amber-700 dark:text-amber-300">
-              备注：需要专业提示词精确控制来使用
+              备注：1.高峰期可能需要较长时间，请耐心等待。2.需要专业提示词精确控制来使用
             </p>
           )}
         </div>
