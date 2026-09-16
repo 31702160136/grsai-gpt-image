@@ -42,5 +42,17 @@
     "eslint-config-next": "15.2.2",
     "tailwindcss": "^4",
     "typescript": "^5"
+  },
+  "pnpm": {
+    "overrides": {
+      "@tailwindcss/postcss>nanoid": "5.1.16",
+      "@vercel/analytics>nanoid": "5.1.16",
+      "nanoid>nanoid": "5.1.16",
+      "next>nanoid": "5.1.16",
+      "next-intl>nanoid": "5.1.16",
+      "next-seo>nanoid": "5.1.16",
+      "postcss>nanoid": "5.1.16",
+      "nanoid": "5.1.16"
+    }
   }
 }
