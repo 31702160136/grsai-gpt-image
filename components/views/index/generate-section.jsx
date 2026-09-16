@@ -9,10 +9,12 @@ const RESIZER_WIDTH = 16;
 const API_BASE_URL = "https://grsai.dakka.com.cn";
 const NANO_BANANA_MODEL_PREFIX = "nano-banana";
 const MINIMAX_H3_MODEL = "minimax-h3";
+const MAX_SEED = 4294967295;
 
 const isNanoBananaModel = (model) =>
   model?.startsWith(NANO_BANANA_MODEL_PREFIX);
 const isMinimaxH3Model = (model) => model === MINIMAX_H3_MODEL;
+const createRandomSeed = () => Math.floor(Math.random() * MAX_SEED) + 1;
 
 const GenerateSection = () => {
   const [tasks, setTasks] = useState([]);
@@ -32,7 +34,7 @@ const GenerateSection = () => {
     audios: [],
     resolution: "768p",
     duration: 10,
-    seed: "",
+    seed: 0,
     webHook: "-1",
   });
 
@@ -162,12 +164,11 @@ const GenerateSection = () => {
           throw new Error("1080p 视频时长最多为 10 秒");
         }
         if (
-          String(drawData.seed).trim() !== "" &&
-          (!Number.isInteger(Number(drawData.seed)) ||
-            Number(drawData.seed) < 0 ||
-            Number(drawData.seed) > 4294967295)
+          !Number.isInteger(drawData.seed) ||
+          drawData.seed < 0 ||
+          drawData.seed > MAX_SEED
         ) {
-          throw new Error("Seed 必须是 0~4294967295 之间的整数");
+          throw new Error(`Seed 必须是 0~${MAX_SEED} 之间的整数`);
         }
       }
 
@@ -185,9 +186,8 @@ const GenerateSection = () => {
           resolution: drawData.resolution,
           duration: Number(drawData.duration),
         });
-        if (String(drawData.seed).trim() !== "") {
-          requestData.seed = Number(drawData.seed);
-        }
+        requestData.seed =
+          drawData.seed === 0 ? createRandomSeed() : drawData.seed;
       }
       if (isNanoBananaModel(drawData.model) && drawData.imageSize) {
         requestData.imageSize = drawData.imageSize;

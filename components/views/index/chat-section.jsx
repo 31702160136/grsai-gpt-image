@@ -415,7 +415,7 @@ const Home = ({
       newData.resolution = drawData.resolution || "768p";
       newData.duration = drawData.duration || 10;
       newData.audios = drawData.audios || [];
-      newData.seed = drawData.seed ?? "";
+      newData.seed = drawData.seed ?? 0;
     }
     if (IMAGE_SIZE_MODELS.includes(newModel)) {
       const availableImageSizes = getAvailableImageSizes(newModel);
@@ -950,17 +950,17 @@ const Home = ({
                 max={4294967295}
                 step={1}
                 value={drawData.seed}
-                placeholder="留空则每次随机"
+                placeholder="0 表示每次随机"
                 onChange={(event) =>
                   setDrawData({
                     ...drawData,
-                    seed: event.target.value,
+                    seed: Number(event.target.value),
                   })
                 }
                 className="h-11 bg-input border-primary/50"
               />
               <p className="mt-1 text-xs text-muted-foreground">
-                输入 0~4294967295 的整数可固定生成结果
+                输入 0 将随机生成 Seed，输入 1~4294967295 可固定生成结果
               </p>
             </div>
             <div className="mb-3 rounded-lg border border-primary/30 p-3">
