@@ -13,6 +13,7 @@ import { useState, useEffect } from "react";
 import "./chat-section.css";
 
 const TASK_IMAGE_DRAG_TYPE = "application/x-grsai-task-image";
+const REFERENCE_IMAGE_DRAG_TYPE = "application/x-grsai-reference-image-index";
 const MINIMAX_H3_MODEL = "minimax-h3";
 const AGNES_VIDEO_MODEL = "agnes-video-2.5";
 const AGNES_VIDEO_FLASH_MODEL = "agnes-video-2.5-flash";
@@ -366,6 +367,9 @@ const Home = ({
 }) => {
   const [uploading, setUploading] = useState(false);
   const [audioUrl, setAudioUrl] = useState("");
+  const [draggedReferenceImageIndex, setDraggedReferenceImageIndex] =
+    useState(null);
+  const [referenceImageDropIndex, setReferenceImageDropIndex] = useState(null);
   const isVideoModel = VIDEO_MODELS.includes(drawData.model);
   const isAgnesVideoModel = AGNES_VIDEO_MODELS.includes(drawData.model);
   const availableResolutions = VIDEO_RESOLUTION_MAP[drawData.model] || [];
@@ -461,6 +465,43 @@ const Home = ({
       alert("读取参考视频失败");
     };
     reader.readAsDataURL(file);
+  };
+
+  const handleReferenceImageDrop = (event, targetIndex) => {
+    const transferredValue = event.dataTransfer.getData(
+      REFERENCE_IMAGE_DRAG_TYPE,
+    );
+    const transferredIndex =
+      transferredValue === "" ? null : Number(transferredValue);
+    const sourceIndex = Number.isInteger(transferredIndex)
+      ? transferredIndex
+      : draggedReferenceImageIndex;
+
+    if (sourceIndex === null) return;
+
+    event.preventDefault();
+    event.stopPropagation();
+
+    if (sourceIndex !== targetIndex) {
+      setDrawData((prev) => {
+        if (
+          sourceIndex < 0 ||
+          sourceIndex >= prev.urls.length ||
+          targetIndex < 0 ||
+          targetIndex >= prev.urls.length
+        ) {
+          return prev;
+        }
+
+        const urls = [...prev.urls];
+        const [movedImage] = urls.splice(sourceIndex, 1);
+        urls.splice(targetIndex, 0, movedImage);
+        return { ...prev, urls };
+      });
+    }
+
+    setDraggedReferenceImageIndex(null);
+    setReferenceImageDropIndex(null);
   };
 
   // Get available sizes for the current model
@@ -577,19 +618,58 @@ const Home = ({
               {drawData.urls.map((image, index) => (
                 <div
                   key={index}
-                  className="relative images aspect-square overflow-hidden rounded-lg border border-border transition-all duration-300 hover:shadow-lg hover:scale-105 hover:border-primary animate-fadeIn"
+                  draggable
+                  title="拖动以调整参考图顺序"
+                  className={`relative images aspect-square cursor-grab overflow-hidden rounded-lg border border-border transition-all duration-300 hover:shadow-lg hover:scale-105 hover:border-primary active:cursor-grabbing animate-fadeIn ${
+                    draggedReferenceImageIndex === index
+                      ? "border-primary"
+                      : ""
+                  } ${
+                    referenceImageDropIndex === index &&
+                    draggedReferenceImageIndex !== index
+                      ? "ring-2 ring-primary ring-offset-2"
+                      : ""
+                  }`}
                   style={{
                     opacity: 0,
                     animation: `fadeIn 0.5s ease-in-out ${
                       index * 100
                     }ms forwards`,
                   }}
+                  onDragStart={(event) => {
+                    setDraggedReferenceImageIndex(index);
+                    setReferenceImageDropIndex(index);
+                    event.dataTransfer.effectAllowed = "move";
+                    event.dataTransfer.setData(
+                      REFERENCE_IMAGE_DRAG_TYPE,
+                      String(index),
+                    );
+                  }}
+                  onDragEnter={(event) => {
+                    if (draggedReferenceImageIndex === null) return;
+                    event.preventDefault();
+                    setReferenceImageDropIndex(index);
+                  }}
+                  onDragOver={(event) => {
+                    if (draggedReferenceImageIndex === null) return;
+                    event.preventDefault();
+                    event.dataTransfer.dropEffect = "move";
+                  }}
+                  onDrop={(event) => handleReferenceImageDrop(event, index)}
+                  onDragEnd={() => {
+                    setDraggedReferenceImageIndex(null);
+                    setReferenceImageDropIndex(null);
+                  }}
                 >
                   <img
                     src={image}
                     alt={`Uploaded ${index + 1}`}
+                    draggable={false}
                     className="w-full h-full object-cover"
                   />
+                  <span className="absolute left-2 top-2 flex h-6 min-w-6 items-center justify-center rounded-full bg-black/60 px-1.5 text-xs font-medium text-white pointer-events-none">
+                    {index + 1}
+                  </span>
                   <button
                     onClick={() => {
                       setDrawData((prev) => ({
