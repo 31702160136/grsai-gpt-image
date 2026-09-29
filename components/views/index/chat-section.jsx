@@ -14,7 +14,22 @@ import "./chat-section.css";
 
 const TASK_IMAGE_DRAG_TYPE = "application/x-grsai-task-image";
 const MINIMAX_H3_MODEL = "minimax-h3";
+const AGNES_VIDEO_MODEL = "agnes-video-2.5";
+const AGNES_VIDEO_FLASH_MODEL = "agnes-video-2.5-flash";
+const VIDEO_MODELS = [
+  MINIMAX_H3_MODEL,
+  AGNES_VIDEO_MODEL,
+  AGNES_VIDEO_FLASH_MODEL,
+];
+const AGNES_VIDEO_MODELS = [AGNES_VIDEO_MODEL, AGNES_VIDEO_FLASH_MODEL];
 const SHOW_MINIMAX_H3_MODEL = true;
+const SHOW_AGNES_VIDEO_MODELS = false;
+const AGNES_ASPECT_RATIOS = ["16:9", "9:16", "21:9", "4:3", "1:1", "3:4"];
+const VIDEO_RESOLUTION_MAP = {
+  [MINIMAX_H3_MODEL]: ["480p", "768p", "1080p"],
+  [AGNES_VIDEO_MODEL]: ["720p", "1080p", "2K"],
+  [AGNES_VIDEO_FLASH_MODEL]: ["720p"],
+};
 
 // Model size support mapping
 const MODEL_SIZE_MAP = {
@@ -81,19 +96,6 @@ const MODEL_SIZE_MAP = {
     "1920x3840",
   ],
   "nano-banana-fast": [
-    "auto",
-    "1:1",
-    "3:4",
-    "4:3",
-    "9:16",
-    "16:9",
-    "2:3",
-    "3:2",
-    "4:5",
-    "5:4",
-    "21:9",
-  ],
-  "nano-banana": [
     "auto",
     "1:1",
     "3:4",
@@ -240,6 +242,8 @@ const MODEL_SIZE_MAP = {
     "8:1",
   ],
   [MINIMAX_H3_MODEL]: ["portrait", "landscape", "square"],
+  [AGNES_VIDEO_MODEL]: AGNES_ASPECT_RATIOS,
+  [AGNES_VIDEO_FLASH_MODEL]: AGNES_ASPECT_RATIOS,
 };
 
 MODEL_SIZE_MAP["gpt-image-2.5"] = MODEL_SIZE_MAP["gpt-image-2"];
@@ -362,7 +366,9 @@ const Home = ({
 }) => {
   const [uploading, setUploading] = useState(false);
   const [audioUrl, setAudioUrl] = useState("");
-  const isVideoModel = drawData.model === MINIMAX_H3_MODEL;
+  const isVideoModel = VIDEO_MODELS.includes(drawData.model);
+  const isAgnesVideoModel = AGNES_VIDEO_MODELS.includes(drawData.model);
+  const availableResolutions = VIDEO_RESOLUTION_MAP[drawData.model] || [];
 
   useEffect(() => {
     const handlePaste = (event) => {
@@ -395,6 +401,68 @@ const Home = ({
     setDrawData((prev) => ({ ...prev, imageSize: currentImageSize }));
   }, [currentImageSize, drawData.imageSize, drawData.model, setDrawData]);
 
+  const handleFrameUpload = (file, field) => {
+    if (!file) return;
+    if (!["image/jpeg", "image/jpg", "image/png", "image/webp"].includes(file.type)) {
+      alert("首尾帧只支持 JPG、JPEG、PNG 和 WebP 格式");
+      return;
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      alert("首尾帧图片大小必须小于 10MB");
+      return;
+    }
+
+    setUploading(true);
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      setDrawData((prev) => ({
+        ...prev,
+        [field]: event.target.result,
+      }));
+      setUploading(false);
+    };
+    reader.onerror = () => {
+      setUploading(false);
+      alert("读取首尾帧图片失败");
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const updateReferenceVideo = (changes) => {
+    setDrawData((prev) => ({
+      ...prev,
+      videos: [
+        {
+          url: "",
+          startSeconds: 0,
+          requireAudio: false,
+          ...(prev.videos?.[0] || {}),
+          ...changes,
+        },
+      ],
+    }));
+  };
+
+  const handleReferenceVideoUpload = (file) => {
+    if (!file) return;
+    if (!file.type.startsWith("video/")) {
+      alert("请选择有效的视频文件");
+      return;
+    }
+
+    setUploading(true);
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      updateReferenceVideo({ url: event.target.result });
+      setUploading(false);
+    };
+    reader.onerror = () => {
+      setUploading(false);
+      alert("读取参考视频失败");
+    };
+    reader.readAsDataURL(file);
+  };
+
   // Get available sizes for the current model
   const getAvailableSizes = (model) => {
     return MODEL_SIZE_MAP[model] || ["auto"];
@@ -411,11 +479,19 @@ const Home = ({
       : availableSizes[0];
 
     const newData = { ...drawData, model: newModel, size: newSize };
-    if (newModel === MINIMAX_H3_MODEL) {
-      newData.resolution = drawData.resolution || "768p";
+    if (VIDEO_MODELS.includes(newModel)) {
+      const availableResolutions = VIDEO_RESOLUTION_MAP[newModel];
+      newData.resolution = availableResolutions.includes(drawData.resolution)
+        ? drawData.resolution
+        : availableResolutions[0];
       newData.duration = drawData.duration || 10;
       newData.audios = drawData.audios || [];
       newData.seed = drawData.seed ?? 0;
+    }
+    if (AGNES_VIDEO_MODELS.includes(newModel)) {
+      newData.firstFrame = drawData.firstFrame || "";
+      newData.lastFrame = drawData.lastFrame || "";
+      newData.videos = drawData.videos || [];
     }
     if (IMAGE_SIZE_MODELS.includes(newModel)) {
       const availableImageSizes = getAvailableImageSizes(newModel);
@@ -756,11 +832,6 @@ const Home = ({
                   <span>nano-banana-fast</span>
                 </div>
               </SelectItem>
-              <SelectItem value="nano-banana">
-                <div className="flex items-center gap-2">
-                  <span>nano-banana</span>
-                </div>
-              </SelectItem>
               <SelectItem value="nano-banana-pro">
                 <div className="flex items-center gap-2">
                   <span>nano-banana-pro</span>
@@ -812,6 +883,20 @@ const Home = ({
                     <span>minimax-h3（视频）</span>
                   </div>
                 </SelectItem>
+              )}
+              {SHOW_AGNES_VIDEO_MODELS && (
+                <>
+                  <SelectItem value={AGNES_VIDEO_MODEL}>
+                    <div className="flex items-center gap-2">
+                      <span>agnes-video-2.5（视频）</span>
+                    </div>
+                  </SelectItem>
+                  <SelectItem value={AGNES_VIDEO_FLASH_MODEL}>
+                    <div className="flex items-center gap-2">
+                      <span>agnes-video-2.5-flash（视频）</span>
+                    </div>
+                  </SelectItem>
+                </>
               )}
             </SelectContent>
           </Select>
@@ -903,7 +988,7 @@ const Home = ({
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {["480p", "768p", "1080p"].map((resolution) => (
+                  {availableResolutions.map((resolution) => (
                     <SelectItem key={resolution} value={resolution}>
                       {resolution}
                     </SelectItem>
@@ -963,6 +1048,189 @@ const Home = ({
                 输入 0 将随机生成 Seed，输入 1~4294967295 可固定生成结果
               </p>
             </div>
+            {isAgnesVideoModel && (
+              <>
+                <div className="mb-3 rounded-lg border border-primary/30 p-3">
+                  <div className="mb-3">
+                    <div className="text-sm font-medium text-foreground">
+                      首尾帧图片
+                    </div>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      可分别上传首帧和尾帧，支持 JPG、PNG、WebP，单张不超过
+                      10MB
+                    </p>
+                  </div>
+                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                    {[
+                      ["firstFrame", "首帧"],
+                      ["lastFrame", "尾帧"],
+                    ].map(([field, label]) => (
+                      <div
+                        key={field}
+                        className="rounded-md border border-dashed border-primary/40 p-3"
+                        onDragOver={(event) => {
+                          event.preventDefault();
+                          event.dataTransfer.dropEffect = "copy";
+                        }}
+                        onDrop={(event) => {
+                          event.preventDefault();
+                          const taskImageUrl = event.dataTransfer.getData(
+                            TASK_IMAGE_DRAG_TYPE,
+                          );
+                          if (taskImageUrl) {
+                            setDrawData((prev) => ({
+                              ...prev,
+                              [field]: taskImageUrl,
+                            }));
+                            return;
+                          }
+                          const file = Array.from(
+                            event.dataTransfer.files,
+                          ).find((item) => item.type.startsWith("image/"));
+                          handleFrameUpload(file, field);
+                        }}
+                      >
+                        <div className="mb-2 text-sm font-medium">{label}</div>
+                        {drawData[field] ? (
+                          <div className="relative mb-2 aspect-video overflow-hidden rounded-md border border-border">
+                            <img
+                              src={drawData[field]}
+                              alt={`${label}预览`}
+                              className="h-full w-full object-cover"
+                            />
+                            <button
+                              type="button"
+                              aria-label={`删除${label}`}
+                              onClick={() =>
+                                setDrawData((prev) => ({
+                                  ...prev,
+                                  [field]: "",
+                                }))
+                              }
+                              className="absolute right-2 top-2 rounded-full bg-black/60 px-2 py-1 text-xs text-white hover:bg-black/80"
+                            >
+                              删除
+                            </button>
+                          </div>
+                        ) : (
+                          <div className="mb-2 flex aspect-video items-center justify-center rounded-md bg-muted/50 text-xs text-muted-foreground">
+                            可上传或从左侧任务区拖入
+                          </div>
+                        )}
+                        <Input
+                          type="file"
+                          accept="image/jpeg,image/png,image/webp"
+                          disabled={uploading}
+                          onChange={(event) => {
+                            handleFrameUpload(event.target.files?.[0], field);
+                            event.target.value = "";
+                          }}
+                          className="h-11 bg-input border-primary/50"
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="mb-3 rounded-lg border border-primary/30 p-3">
+                  <div className="mb-3 flex items-center justify-between gap-2">
+                    <div>
+                      <div className="text-sm font-medium text-foreground">
+                        参考视频
+                      </div>
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        支持上传视频、视频链接或 Base64，最多 1 个
+                      </p>
+                    </div>
+                    {drawData.videos?.[0]?.url && (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        className="h-9 shrink-0"
+                        onClick={() =>
+                          setDrawData((prev) => ({ ...prev, videos: [] }))
+                        }
+                      >
+                        删除
+                      </Button>
+                    )}
+                  </div>
+                  {drawData.videos?.[0]?.url && (
+                    <video
+                      controls
+                      preload="metadata"
+                      src={drawData.videos[0].url}
+                      className="mb-3 max-h-56 w-full rounded-md border border-border bg-black"
+                    />
+                  )}
+                  <Input
+                    type="file"
+                    accept="video/*"
+                    disabled={uploading}
+                    onChange={(event) => {
+                      handleReferenceVideoUpload(event.target.files?.[0]);
+                      event.target.value = "";
+                    }}
+                    className="mb-2 h-11 bg-input border-primary/50"
+                  />
+                  <Input
+                    type="text"
+                    value={drawData.videos?.[0]?.url || ""}
+                    placeholder="或输入视频链接 / Base64"
+                    onChange={(event) =>
+                      updateReferenceVideo({ url: event.target.value })
+                    }
+                    className="mb-3 h-11 bg-input border-primary/50"
+                  />
+                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                    <div>
+                      <label
+                        htmlFor="reference-video-start-seconds"
+                        className="mb-2 block text-sm font-medium text-foreground"
+                      >
+                        从参考视频的指定秒数开始读取
+                      </label>
+                      <Input
+                        id="reference-video-start-seconds"
+                        type="number"
+                        min={0}
+                        step="any"
+                        value={drawData.videos?.[0]?.startSeconds ?? 0}
+                        onChange={(event) =>
+                          updateReferenceVideo({
+                            startSeconds: event.target.value,
+                          })
+                        }
+                        className="h-11 bg-input border-primary/50"
+                      />
+                    </div>
+                    <div>
+                      <div className="mb-2 text-sm font-medium text-foreground">
+                        是否参考音轨
+                      </div>
+                      <Select
+                        value={String(
+                          drawData.videos?.[0]?.requireAudio ?? false,
+                        )}
+                        onValueChange={(value) =>
+                          updateReferenceVideo({
+                            requireAudio: value === "true",
+                          })
+                        }
+                      >
+                        <SelectTrigger className="h-11 w-full bg-input border-primary/50">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="false">否</SelectItem>
+                          <SelectItem value="true">是</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                </div>
+              </>
+            )}
             <div className="mb-3 rounded-lg border border-primary/30 p-3">
               <div className="flex items-center justify-between gap-2 mb-2">
                 <span className="text-sm font-medium text-foreground">

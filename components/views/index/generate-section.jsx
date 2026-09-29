@@ -7,13 +7,21 @@ const DEFAULT_SPLIT_PERCENT = 55;
 const MIN_PANE_WIDTH = 300;
 const RESIZER_WIDTH = 16;
 const API_BASE_URL = "https://grsai.dakka.com.cn";
+// const API_BASE_URL = "http://127.0.0.1:13002";
 const NANO_BANANA_MODEL_PREFIX = "nano-banana";
 const MINIMAX_H3_MODEL = "minimax-h3";
+const VIDEO_MODELS = [
+  MINIMAX_H3_MODEL,
+  "agnes-video-2.5",
+  "agnes-video-2.5-flash",
+];
+const AGNES_VIDEO_MODELS = ["agnes-video-2.5", "agnes-video-2.5-flash"];
 const MAX_SEED = 4294967295;
 
 const isNanoBananaModel = (model) =>
   model?.startsWith(NANO_BANANA_MODEL_PREFIX);
-const isMinimaxH3Model = (model) => model === MINIMAX_H3_MODEL;
+const isVideoModel = (model) => VIDEO_MODELS.includes(model);
+const isAgnesVideoModel = (model) => AGNES_VIDEO_MODELS.includes(model);
 const createRandomSeed = () => Math.floor(Math.random() * MAX_SEED) + 1;
 
 const GenerateSection = () => {
@@ -35,6 +43,9 @@ const GenerateSection = () => {
     resolution: "768p",
     duration: 10,
     seed: 0,
+    firstFrame: "",
+    lastFrame: "",
+    videos: [],
     webHook: "-1",
   });
 
@@ -43,7 +54,7 @@ const GenerateSection = () => {
     if (files.length === 0) return;
 
     // 限制上传图片数量
-    const maxImages = isMinimaxH3Model(drawData.model) ? 9 : 8;
+    const maxImages = isVideoModel(drawData.model) ? 9 : 8;
     if (drawData.urls.length + files.length > maxImages) {
       alert(`最多只能上传${maxImages}张图片`);
       return;
@@ -89,14 +100,14 @@ const GenerateSection = () => {
   const handleTaskImageDrop = (imageUrl) => {
     if (!imageUrl) return;
 
-    const maxImages = isMinimaxH3Model(drawData.model) ? 9 : 8;
+    const maxImages = isVideoModel(drawData.model) ? 9 : 8;
     if (drawData.urls.length >= maxImages) {
       alert(`最多只能上传${maxImages}张图片`);
       return;
     }
 
     setDrawData((prev) => {
-      const limit = isMinimaxH3Model(prev.model) ? 9 : 8;
+      const limit = isVideoModel(prev.model) ? 9 : 8;
       if (prev.urls.length >= limit) return prev;
 
       return {
@@ -146,9 +157,9 @@ const GenerateSection = () => {
     }
     setIsGenerate(true);
     try {
-      if (isMinimaxH3Model(drawData.model)) {
+      if (isVideoModel(drawData.model)) {
         if (!drawData.prompt.trim()) {
-          throw new Error("minimax-h3 必须填写提示词");
+          throw new Error(`${drawData.model} 必须填写提示词`);
         }
         if (
           !Number.isInteger(Number(drawData.duration)) ||
@@ -170,6 +181,15 @@ const GenerateSection = () => {
         ) {
           throw new Error(`Seed 必须是 0~${MAX_SEED} 之间的整数`);
         }
+        const referenceVideo = drawData.videos?.[0];
+        if (
+          isAgnesVideoModel(drawData.model) &&
+          referenceVideo?.url?.trim() &&
+          (!Number.isFinite(Number(referenceVideo.startSeconds)) ||
+            Number(referenceVideo.startSeconds) < 0)
+        ) {
+          throw new Error("参考视频开头秒数必须是大于或等于 0 的数字");
+        }
       }
 
       // 新版异步接口只接收明确支持的字段，避免发送旧接口参数
@@ -180,7 +200,7 @@ const GenerateSection = () => {
         aspectRatio: drawData.size,
         replyType: "async",
       };
-      if (isMinimaxH3Model(drawData.model)) {
+      if (isVideoModel(drawData.model)) {
         Object.assign(requestData, {
           audios: drawData.audios,
           resolution: drawData.resolution,
@@ -188,6 +208,24 @@ const GenerateSection = () => {
         });
         requestData.seed =
           drawData.seed === 0 ? createRandomSeed() : drawData.seed;
+      }
+      if (isAgnesVideoModel(drawData.model)) {
+        if (drawData.firstFrame) {
+          requestData.firstFrame = drawData.firstFrame;
+        }
+        if (drawData.lastFrame) {
+          requestData.lastFrame = drawData.lastFrame;
+        }
+        const referenceVideo = drawData.videos?.[0];
+        if (referenceVideo?.url?.trim()) {
+          requestData.videos = [
+            {
+              url: referenceVideo.url.trim(),
+              startSeconds: Number(referenceVideo.startSeconds),
+              requireAudio: Boolean(referenceVideo.requireAudio),
+            },
+          ];
+        }
       }
       if (isNanoBananaModel(drawData.model) && drawData.imageSize) {
         requestData.imageSize = drawData.imageSize;
@@ -515,7 +553,7 @@ const GenerateSection = () => {
               }`}
             />
           </div>
-          <div className="w-full min-w-0 flex flex-col border border-primary/30 p-2 sm:p-3 md:p-4 bg-popover/50 rounded-lg shadow-sm mb-3 lg:mb-0">
+          <div className="w-full min-w-0 flex flex-col border border-primary/30 p-2 sm:p-3 md:p-4 bg-popover/50 rounded-lg shadow-sm mb-3 lg:mb-0 lg:max-h-[calc(100vh-6rem)] lg:overflow-y-auto">
             <ChatSection
               drawData={drawData}
               setDrawData={setDrawData}

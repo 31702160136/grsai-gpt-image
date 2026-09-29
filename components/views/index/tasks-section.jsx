@@ -10,7 +10,13 @@ const LOCAL_STORAGE_KEY = "savedTasks";
 const MAX_SAVED_TASKS = 200;
 
 // 视频模型列表
-const VIDEO_MODELS = ["veo3.1-fast", "veo3.1-pro", "minimax-h3"];
+const VIDEO_MODELS = [
+  "veo3.1-fast",
+  "veo3.1-pro",
+  "minimax-h3",
+  "agnes-video-2.5",
+  "agnes-video-2.5-flash",
+];
 const TASK_IMAGE_DRAG_TYPE = "application/x-grsai-task-image";
 
 // 判断是否为视频模型
@@ -36,6 +42,9 @@ const TaskItem = memo(
       !isVideoModel(image.model) &&
       Boolean(image.src) &&
       !image.error;
+    const errorMessage = getErrorMessage(image);
+    const displayErrorMessage =
+      errorMessage || (image.error ? "生成结果加载失败" : "");
 
     return (
       <div
@@ -104,21 +113,45 @@ const TaskItem = memo(
                 />
               )
             ) : (
-              <div className="w-full h-full flex flex-col items-center justify-center text-gray-400 p-4">
-                <svg
-                  className="w-8 h-8 mb-2"
-                  fill="currentColor"
-                  viewBox="0 0 20 20"
-                >
-                  <path
-                    fillRule="evenodd"
-                    d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z"
-                    clipRule="evenodd"
-                  />
-                </svg>
-                <span className="text-xs text-center text-gray-500 dark:text-gray-400">
-                  {getErrorMessage(image)}
-                </span>
+              <div className="w-full h-full flex flex-col items-center justify-center p-3 text-center">
+                {displayErrorMessage ? (
+                  <>
+                    <div className="mb-2 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-red-100 text-red-500 dark:bg-red-950/50 dark:text-red-400">
+                      <svg
+                        className="h-5 w-5"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                        aria-hidden="true"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M12 9v4m0 4h.01M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"
+                        />
+                      </svg>
+                    </div>
+                    <span className="mb-1 text-xs font-medium text-red-600 dark:text-red-400">
+                      生成失败
+                    </span>
+                    <span className="text-[11px] leading-4 text-gray-500 dark:text-gray-400">
+                      点击查看原因
+                    </span>
+                  </>
+                ) : (
+                  <svg
+                    className="h-8 w-8 text-gray-400"
+                    fill="currentColor"
+                    viewBox="0 0 20 20"
+                  >
+                    <path
+                      fillRule="evenodd"
+                      d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z"
+                      clipRule="evenodd"
+                    />
+                  </svg>
+                )}
               </div>
             )}
 
@@ -212,6 +245,7 @@ const TaskItem = memo(
       prevProps.image.src === nextProps.image.src &&
       prevProps.image.loaded === nextProps.image.loaded &&
       prevProps.image.error === nextProps.image.error &&
+      prevProps.image.failureReason === nextProps.image.failureReason &&
       prevProps.image.progress === nextProps.image.progress &&
       prevProps.image.finish === nextProps.image.finish &&
       prevProps.selectionMode === nextProps.selectionMode &&
@@ -229,6 +263,13 @@ const ImagePreviewModal = memo(
     if (!previewImage) return null;
 
     const isVideo = isVideoModel(previewImage.model);
+    const errorMessage =
+      typeof previewImage.error === "string" && previewImage.error.trim()
+        ? previewImage.error.trim()
+        : previewImage.failureReason || "生成失败";
+    const isFailure =
+      !previewImage.src &&
+      Boolean(previewImage.error || previewImage.failureReason);
 
     // 视频加载完成后尝试播放
     const handleVideoLoad = useCallback((e) => {
@@ -261,10 +302,50 @@ const ImagePreviewModal = memo(
       >
         <div className="absolute inset-0 flex items-center justify-center">
           <div
-            className="relative max-w-4xl"
+            className="relative w-full max-w-4xl px-4"
             onClick={(e) => e.stopPropagation()}
           >
-            {isVideo ? (
+            {isFailure ? (
+              <div className="mx-auto w-full max-w-lg rounded-xl bg-white p-6 shadow-2xl dark:bg-gray-800">
+                <div className="mb-4 flex items-center gap-3">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-red-100 text-red-500 dark:bg-red-950/50 dark:text-red-400">
+                    <svg
+                      className="h-6 w-6"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                      aria-hidden="true"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M12 9v4m0 4h.01M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"
+                      />
+                    </svg>
+                  </div>
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                    生成失败
+                  </h3>
+                </div>
+                <div className="mb-3 break-all text-xs text-gray-500 dark:text-gray-400">
+                  任务 ID：
+                  <span className="font-mono">{previewImage.id}</span>
+                </div>
+                <p className="max-h-[50vh] overflow-y-auto whitespace-pre-wrap break-words rounded-lg bg-gray-50 p-4 text-sm leading-6 text-gray-700 dark:bg-gray-900 dark:text-gray-300">
+                  {errorMessage}
+                </p>
+                <div className="mt-5 flex justify-end">
+                  <button
+                    type="button"
+                    onClick={onClose}
+                    className="rounded-lg bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-700 dark:bg-gray-100 dark:text-gray-900 dark:hover:bg-white"
+                  >
+                    关闭
+                  </button>
+                </div>
+              </div>
+            ) : isVideo ? (
               <video
                 key={`preview-video-${previewImage.id}`}
                 src={previewImage.src}
@@ -296,6 +377,9 @@ const ImagePreviewModal = memo(
     return (
       prevProps.previewImage?.id === nextProps.previewImage?.id &&
       prevProps.previewImage?.src === nextProps.previewImage?.src &&
+      prevProps.previewImage?.error === nextProps.previewImage?.error &&
+      prevProps.previewImage?.failureReason ===
+        nextProps.previewImage?.failureReason &&
       prevProps.onClose === nextProps.onClose
     );
   }
@@ -514,6 +598,9 @@ const Tasks = ({ tasks, setTasks }) => {
     if (!task.finish) {
       return "";
     }
+    if (typeof task.error === "string" && task.error.trim()) {
+      return task.error.trim();
+    }
     if (!task.failureReason) return "";
 
     switch (task.failureReason) {
@@ -522,7 +609,7 @@ const Tasks = ({ tasks, setTasks }) => {
       case "output_moderation":
         return "输出违规";
       case "error":
-        return task.error || "生成失败";
+        return "生成失败";
       default:
         return task.failureReason || "未知错误";
     }
@@ -545,7 +632,7 @@ const Tasks = ({ tasks, setTasks }) => {
   const openPreview = useCallback(
     (image) => {
       if (selectionMode) return;
-      if (!image.src) return;
+      if (!image.src && !image.error && !image.failureReason) return;
       setPreviewImage(image);
       // 防止背景滚动
       if (typeof document !== "undefined") {

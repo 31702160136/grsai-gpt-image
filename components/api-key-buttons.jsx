@@ -37,7 +37,7 @@ const ApiKeyButtons = () => {
 
   return (
     <div className="flex gap-2">
-      <Link href="https://grsai.com" target="_blank">
+      <Link href="https://grsai.ai" target="_blank">
         <Button variant="outline">获取APIKEY</Button>
       </Link>
 
