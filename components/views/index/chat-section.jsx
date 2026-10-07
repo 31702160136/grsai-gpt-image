@@ -250,6 +250,7 @@ const MODEL_SIZE_MAP = {
 MODEL_SIZE_MAP["gpt-image-2.5"] = MODEL_SIZE_MAP["gpt-image-2"];
 MODEL_SIZE_MAP["gpt-image-2.5-flare"] = MODEL_SIZE_MAP["gpt-image-2-vip"];
 MODEL_SIZE_MAP["gpt-image-2.5-sunburst"] = MODEL_SIZE_MAP["gpt-image-2-vip"];
+MODEL_SIZE_MAP["nano-banana-2.1"] = MODEL_SIZE_MAP["nano-banana-2"];
 
 const IMAGE_SIZE_MODELS = [
   "nano-banana-pro",
@@ -258,6 +259,7 @@ const IMAGE_SIZE_MODELS = [
   "nano-banana-pro-vip",
   "nano-banana-pro-4k-vip",
   "nano-banana-2",
+  "nano-banana-2.1",
   "nano-banana-2-cl",
   "nano-banana-2-2k-cl",
   "nano-banana-2-4k-cl",
@@ -940,6 +942,11 @@ const Home = ({
               <SelectItem value="nano-banana-2">
                 <div className="flex items-center gap-2">
                   <span>nano-banana-2</span>
+                </div>
+              </SelectItem>
+              <SelectItem value="nano-banana-2.1">
+                <div className="flex items-center gap-2">
+                  <span>nano-banana-2.1</span>
                 </div>
               </SelectItem>
               <SelectItem value="nano-banana-2-cl">

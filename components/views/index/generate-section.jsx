@@ -245,6 +245,7 @@ const GenerateSection = () => {
         drawData.model !== "nano-banana-pro-vip" &&
         drawData.model !== "nano-banana-pro-4k-vip" &&
         drawData.model !== "nano-banana-2" &&
+        drawData.model !== "nano-banana-2.1" &&
         drawData.model !== "nano-banana-2-cl" &&
         drawData.model !== "nano-banana-2-2k-cl" &&
         drawData.model !== "nano-banana-2-4k-cl"
