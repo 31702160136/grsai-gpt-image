@@ -33,6 +33,13 @@ const VIDEO_RESOLUTION_MAP = {
   [AGNES_VIDEO_MODEL]: ["720p", "1080p", "2K"],
   [AGNES_VIDEO_FLASH_MODEL]: ["720p"],
 };
+const VIDEO_MAX_DURATION_MAP = {
+  [AGNES_VIDEO_MODEL]: 12,
+};
+const getMaxVideoDuration = (model, resolution) => {
+  if (VIDEO_MAX_DURATION_MAP[model]) return VIDEO_MAX_DURATION_MAP[model];
+  return resolution === "1080p" ? 10 : 15;
+};
 
 // Model size support mapping
 const MODEL_SIZE_MAP = {
@@ -530,7 +537,10 @@ const Home = ({
       newData.resolution = availableResolutions.includes(drawData.resolution)
         ? drawData.resolution
         : availableResolutions[0];
-      newData.duration = drawData.duration || 10;
+      newData.duration = Math.min(
+        drawData.duration || 10,
+        getMaxVideoDuration(newModel, newData.resolution)
+      );
       newData.audios = drawData.audios || [];
       newData.seed = drawData.seed ?? 0;
     }
@@ -1066,8 +1076,9 @@ const Home = ({
                     ...prev,
                     resolution,
                     duration:
-                      resolution === "1080p" && Number(prev.duration) > 10
-                        ? 10
+                      Number(prev.duration) >
+                      getMaxVideoDuration(prev.model, resolution)
+                        ? getMaxVideoDuration(prev.model, resolution)
                         : prev.duration,
                   }))
                 }
@@ -1096,7 +1107,7 @@ const Home = ({
                   id="minimax-duration"
                   type="number"
                   min={1}
-                  max={drawData.resolution === "1080p" ? 10 : 15}
+                  max={getMaxVideoDuration(drawData.model, drawData.resolution)}
                   step={1}
                   value={drawData.duration}
                   onChange={(event) =>

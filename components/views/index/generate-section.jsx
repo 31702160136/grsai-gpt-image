@@ -15,7 +15,8 @@ const VIDEO_MODELS = [
   "agnes-video-2.5",
   "agnes-video-2.5-flash",
 ];
-const AGNES_VIDEO_MODELS = ["agnes-video-2.5", "agnes-video-2.5-flash"];
+const AGNES_VIDEO_MODEL = "agnes-video-2.5";
+const AGNES_VIDEO_MODELS = [AGNES_VIDEO_MODEL, "agnes-video-2.5-flash"];
 const MAX_SEED = 4294967295;
 
 const isNanoBananaModel = (model) =>
@@ -168,7 +169,11 @@ const GenerateSection = () => {
         ) {
           throw new Error("视频时长必须是 1~15 秒的整数");
         }
-        if (
+        if (drawData.model === AGNES_VIDEO_MODEL) {
+          if (Number(drawData.duration) > 12) {
+            throw new Error(`${AGNES_VIDEO_MODEL} 视频时长最多为 12 秒`);
+          }
+        } else if (
           drawData.resolution === "1080p" &&
           Number(drawData.duration) > 10
         ) {
