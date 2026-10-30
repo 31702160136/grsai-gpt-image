@@ -17,12 +17,18 @@ const REFERENCE_IMAGE_DRAG_TYPE = "application/x-grsai-reference-image-index";
 const MINIMAX_H3_MODEL = "minimax-h3";
 const AGNES_VIDEO_MODEL = "agnes-video-2.5";
 const AGNES_VIDEO_FLASH_MODEL = "agnes-video-2.5-flash";
+const WAN_VIDEO_MODEL = "wan-3.0";
 const VIDEO_MODELS = [
   MINIMAX_H3_MODEL,
   AGNES_VIDEO_MODEL,
   AGNES_VIDEO_FLASH_MODEL,
+  WAN_VIDEO_MODEL,
 ];
-const AGNES_VIDEO_MODELS = [AGNES_VIDEO_MODEL, AGNES_VIDEO_FLASH_MODEL];
+const AGNES_VIDEO_MODELS = [
+  AGNES_VIDEO_MODEL,
+  AGNES_VIDEO_FLASH_MODEL,
+  WAN_VIDEO_MODEL,
+];
 const SHOW_MINIMAX_H3_MODEL = true;
 const SHOW_AGNES_VIDEO_MODELS = true;
 const SHOW_AGNES_VIDEO_FLASH_MODEL = false;
@@ -32,14 +38,20 @@ const VIDEO_RESOLUTION_MAP = {
   [MINIMAX_H3_MODEL]: ["480p", "768p", "1080p"],
   [AGNES_VIDEO_MODEL]: ["720p", "1080p", "2K"],
   [AGNES_VIDEO_FLASH_MODEL]: ["720p"],
+  [WAN_VIDEO_MODEL]: ["720p", "1080p", "2K"],
 };
 const VIDEO_MAX_DURATION_MAP = {
   [AGNES_VIDEO_MODEL]: 12,
+  [WAN_VIDEO_MODEL]: 30,
+};
+const VIDEO_MIN_DURATION_MAP = {
+  [WAN_VIDEO_MODEL]: 2,
 };
 const getMaxVideoDuration = (model, resolution) => {
   if (VIDEO_MAX_DURATION_MAP[model]) return VIDEO_MAX_DURATION_MAP[model];
   return resolution === "1080p" ? 10 : 15;
 };
+const getMinVideoDuration = (model) => VIDEO_MIN_DURATION_MAP[model] || 1;
 
 // Model size support mapping
 const MODEL_SIZE_MAP = {
@@ -254,6 +266,7 @@ const MODEL_SIZE_MAP = {
   [MINIMAX_H3_MODEL]: ["portrait", "landscape", "square"],
   [AGNES_VIDEO_MODEL]: AGNES_ASPECT_RATIOS,
   [AGNES_VIDEO_FLASH_MODEL]: AGNES_ASPECT_RATIOS,
+  [WAN_VIDEO_MODEL]: AGNES_ASPECT_RATIOS,
 };
 
 MODEL_SIZE_MAP["gpt-image-2.5"] = MODEL_SIZE_MAP["gpt-image-2"];
@@ -537,9 +550,12 @@ const Home = ({
       newData.resolution = availableResolutions.includes(drawData.resolution)
         ? drawData.resolution
         : availableResolutions[0];
-      newData.duration = Math.min(
-        drawData.duration || 10,
-        getMaxVideoDuration(newModel, newData.resolution)
+      newData.duration = Math.max(
+        getMinVideoDuration(newModel),
+        Math.min(
+          drawData.duration || 10,
+          getMaxVideoDuration(newModel, newData.resolution)
+        )
       );
       newData.audios = drawData.audios || [];
       newData.seed = drawData.seed ?? 0;
@@ -994,6 +1010,11 @@ const Home = ({
                       </div>
                     </SelectItem>
                   )}
+                  <SelectItem value={WAN_VIDEO_MODEL}>
+                    <div className="flex items-center gap-2">
+                      <span>wan-3.0（视频）</span>
+                    </div>
+                  </SelectItem>
                 </>
               )}
             </SelectContent>
@@ -1106,7 +1127,7 @@ const Home = ({
                 <Input
                   id="minimax-duration"
                   type="number"
-                  min={1}
+                  min={getMinVideoDuration(drawData.model)}
                   max={getMaxVideoDuration(drawData.model, drawData.resolution)}
                   step={1}
                   value={drawData.duration}
@@ -1131,7 +1152,7 @@ const Home = ({
                 id="minimax-seed"
                 type="number"
                 min={0}
-                max={4294967295}
+                max={2147483647}
                 step={1}
                 value={drawData.seed}
                 placeholder="0 表示每次随机"
@@ -1144,7 +1165,7 @@ const Home = ({
                 className="h-11 bg-input border-primary/50"
               />
               <p className="mt-1 text-xs text-muted-foreground">
-                输入 0 将随机生成 Seed，输入 1~4294967295 可固定生成结果
+                输入 0 将随机生成 Seed，输入 1~2147483647 可固定生成结果
               </p>
             </div>
             {isAgnesVideoModel && (

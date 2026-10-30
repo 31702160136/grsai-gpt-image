@@ -7,23 +7,29 @@ const DEFAULT_SPLIT_PERCENT = 55;
 const MIN_PANE_WIDTH = 300;
 const RESIZER_WIDTH = 16;
 const API_BASE_URL = "https://grsai.dakka.com.cn";
-// const API_BASE_URL = "http://127.0.0.1:13002";
+// const API_BASE_URL = "http://115.231.176.233:13051";
 const NANO_BANANA_MODEL_PREFIX = "nano-banana";
 const MINIMAX_H3_MODEL = "minimax-h3";
 const VIDEO_MODELS = [
   MINIMAX_H3_MODEL,
   "agnes-video-2.5",
   "agnes-video-2.5-flash",
+  "wan-3.0",
 ];
 const AGNES_VIDEO_MODEL = "agnes-video-2.5";
-const AGNES_VIDEO_MODELS = [AGNES_VIDEO_MODEL, "agnes-video-2.5-flash"];
-const MAX_SEED = 4294967295;
+const WAN_VIDEO_MODEL = "wan-3.0";
+const AGNES_VIDEO_MODELS = [
+  AGNES_VIDEO_MODEL,
+  "agnes-video-2.5-flash",
+  WAN_VIDEO_MODEL,
+];
+const MAX_SEED = 2147483647;
 
 const isNanoBananaModel = (model) =>
   model?.startsWith(NANO_BANANA_MODEL_PREFIX);
 const isVideoModel = (model) => VIDEO_MODELS.includes(model);
 const isAgnesVideoModel = (model) => AGNES_VIDEO_MODELS.includes(model);
-const createRandomSeed = () => Math.floor(Math.random() * MAX_SEED) + 1;
+const createRandomSeed = () => Math.floor(Math.random() * (MAX_SEED + 1));
 
 const GenerateSection = () => {
   const [tasks, setTasks] = useState([]);
@@ -162,18 +168,24 @@ const GenerateSection = () => {
         if (!drawData.prompt.trim()) {
           throw new Error(`${drawData.model} 必须填写提示词`);
         }
+        const isWanVideo = drawData.model === WAN_VIDEO_MODEL;
+        const minDuration = isWanVideo ? 2 : 1;
+        const maxDuration = isWanVideo ? 30 : 15;
         if (
           !Number.isInteger(Number(drawData.duration)) ||
-          Number(drawData.duration) < 1 ||
-          Number(drawData.duration) > 15
+          Number(drawData.duration) < minDuration ||
+          Number(drawData.duration) > maxDuration
         ) {
-          throw new Error("视频时长必须是 1~15 秒的整数");
+          throw new Error(
+            `视频时长必须是 ${minDuration}~${maxDuration} 秒的整数`,
+          );
         }
         if (drawData.model === AGNES_VIDEO_MODEL) {
           if (Number(drawData.duration) > 12) {
             throw new Error(`${AGNES_VIDEO_MODEL} 视频时长最多为 12 秒`);
           }
         } else if (
+          !isWanVideo &&
           drawData.resolution === "1080p" &&
           Number(drawData.duration) > 10
         ) {

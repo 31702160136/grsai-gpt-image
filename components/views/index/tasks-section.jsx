@@ -16,6 +16,7 @@ const VIDEO_MODELS = [
   "minimax-h3",
   "agnes-video-2.5",
   "agnes-video-2.5-flash",
+  "wan-3.0",
 ];
 const TASK_IMAGE_DRAG_TYPE = "application/x-grsai-task-image";
 
