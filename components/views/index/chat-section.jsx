@@ -272,6 +272,7 @@ const MODEL_SIZE_MAP = {
 MODEL_SIZE_MAP["gpt-image-2.5"] = MODEL_SIZE_MAP["gpt-image-2"];
 MODEL_SIZE_MAP["gpt-image-2.5-flare"] = MODEL_SIZE_MAP["gpt-image-2-vip"];
 MODEL_SIZE_MAP["gpt-image-2.5-sunburst"] = MODEL_SIZE_MAP["gpt-image-2-vip"];
+MODEL_SIZE_MAP["gpt-image-2.6"] = MODEL_SIZE_MAP["gpt-image-2.5"];
 MODEL_SIZE_MAP["nano-banana-2.1"] = MODEL_SIZE_MAP["nano-banana-2"];
 
 const IMAGE_SIZE_MODELS = [
@@ -370,6 +371,7 @@ const SIZE_LABEL_MAP = {
 SIZE_LABEL_MAP["gpt-image-2.5"] = SIZE_LABEL_MAP["gpt-image-2"];
 SIZE_LABEL_MAP["gpt-image-2.5-flare"] = SIZE_LABEL_MAP["gpt-image-2-vip"];
 SIZE_LABEL_MAP["gpt-image-2.5-sunburst"] = SIZE_LABEL_MAP["gpt-image-2-vip"];
+SIZE_LABEL_MAP["gpt-image-2.6"] = SIZE_LABEL_MAP["gpt-image-2.5"];
 
 // 根据模型与尺寸获取展示标签（仍使用原始尺寸值发送请求）
 const getSizeLabel = (model, size) => {
@@ -932,6 +934,11 @@ const Home = ({
               <SelectItem value="gpt-image-2.5-sunburst">
                 <div className="flex items-center gap-2">
                   <span>gpt-image-2.5-sunburst</span>
+                </div>
+              </SelectItem>
+              <SelectItem value="gpt-image-2.6">
+                <div className="flex items-center gap-2">
+                  <span>gpt-image-2.6</span>
                 </div>
               </SelectItem>
               <SelectItem value="nano-banana-fast">
