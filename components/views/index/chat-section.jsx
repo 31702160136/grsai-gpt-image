@@ -273,6 +273,8 @@ MODEL_SIZE_MAP["gpt-image-2.5"] = MODEL_SIZE_MAP["gpt-image-2"];
 MODEL_SIZE_MAP["gpt-image-2.5-flare"] = MODEL_SIZE_MAP["gpt-image-2-vip"];
 MODEL_SIZE_MAP["gpt-image-2.5-sunburst"] = MODEL_SIZE_MAP["gpt-image-2-vip"];
 MODEL_SIZE_MAP["gpt-image-2.6"] = MODEL_SIZE_MAP["gpt-image-2.5"];
+MODEL_SIZE_MAP["gpt-image-2.6-flare"] = MODEL_SIZE_MAP["gpt-image-2.5-flare"];
+MODEL_SIZE_MAP["gpt-image-2.6-sunburst"] = MODEL_SIZE_MAP["gpt-image-2.5-sunburst"];
 MODEL_SIZE_MAP["nano-banana-2.1"] = MODEL_SIZE_MAP["nano-banana-2"];
 
 const IMAGE_SIZE_MODELS = [
@@ -303,6 +305,19 @@ const getAvailableImageSizes = (model) => {
   }
   return ["1K", "2K", "4K"];
 };
+
+const MODEL_QUALITY_MAP = {
+  "gpt-image-2": ["auto"],
+  "gpt-image-2.5": ["auto"],
+  "gpt-image-2.6": ["auto"],
+  "gpt-image-2-vip": ["auto","low", "medium", "high"],
+  "gpt-image-2.5-sunburst": ["auto","low", "medium", "high", "xhigh", "max"],
+  "gpt-image-2.5-flare": ["auto","low", "medium", "high"],
+  "gpt-image-2.6-sunburst": ["auto","low", "medium", "high", "xhigh", "max"],
+  "gpt-image-2.6-flare": ["auto","low", "medium", "high"],
+};
+
+const getAvailableQualities = (model) => MODEL_QUALITY_MAP[model] || [];
 
 // 像素尺寸对应的展示标签（比例、K 等级）
 const SIZE_LABEL_MAP = {
@@ -372,6 +387,8 @@ SIZE_LABEL_MAP["gpt-image-2.5"] = SIZE_LABEL_MAP["gpt-image-2"];
 SIZE_LABEL_MAP["gpt-image-2.5-flare"] = SIZE_LABEL_MAP["gpt-image-2-vip"];
 SIZE_LABEL_MAP["gpt-image-2.5-sunburst"] = SIZE_LABEL_MAP["gpt-image-2-vip"];
 SIZE_LABEL_MAP["gpt-image-2.6"] = SIZE_LABEL_MAP["gpt-image-2.5"];
+SIZE_LABEL_MAP["gpt-image-2.6-flare"] = SIZE_LABEL_MAP["gpt-image-2.5-flare"];
+SIZE_LABEL_MAP["gpt-image-2.6-sunburst"] = SIZE_LABEL_MAP["gpt-image-2.5-sunburst"];
 
 // 根据模型与尺寸获取展示标签（仍使用原始尺寸值发送请求）
 const getSizeLabel = (model, size) => {
@@ -427,6 +444,17 @@ const Home = ({
 
     setDrawData((prev) => ({ ...prev, imageSize: currentImageSize }));
   }, [currentImageSize, drawData.imageSize, drawData.model, setDrawData]);
+
+  const availableQualities = getAvailableQualities(drawData.model);
+  const currentQuality = availableQualities.includes(drawData.quality)
+    ? drawData.quality
+    : availableQualities[0];
+
+  useEffect(() => {
+    if (drawData.quality === currentQuality) return;
+
+    setDrawData((prev) => ({ ...prev, quality: currentQuality }));
+  }, [currentQuality, drawData.quality, setDrawData]);
 
   const handleFrameUpload = (file, field) => {
     if (!file) return;
@@ -573,6 +601,10 @@ const Home = ({
         ? drawData.imageSize
         : availableImageSizes[0];
     }
+    const availableQualities = getAvailableQualities(newModel);
+    newData.quality = availableQualities.includes(drawData.quality)
+      ? drawData.quality
+      : availableQualities[0];
 
     setDrawData(newData);
   };
@@ -941,6 +973,16 @@ const Home = ({
                   <span>gpt-image-2.6</span>
                 </div>
               </SelectItem>
+              <SelectItem value="gpt-image-2.6-flare">
+                <div className="flex items-center gap-2">
+                  <span>gpt-image-2.6-flare</span>
+                </div>
+              </SelectItem>
+              <SelectItem value="gpt-image-2.6-sunburst">
+                <div className="flex items-center gap-2">
+                  <span>gpt-image-2.6-sunburst</span>
+                </div>
+              </SelectItem>
               <SelectItem value="nano-banana-fast">
                 <div className="flex items-center gap-2">
                   <span>nano-banana-fast</span>
@@ -1084,6 +1126,36 @@ const Home = ({
                   <SelectItem key={imageSize} value={imageSize}>
                     <div className="flex items-center gap-2">
                       <span>{imageSize}</span>
+                    </div>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        )}
+        {availableQualities.length > 0 && (
+          <div className="mb-3">
+            <div className="text-sm font-medium mb-2 text-foreground">
+              quality参数
+            </div>
+            <Select
+              value={currentQuality}
+              onValueChange={(value) =>
+                setDrawData({ ...drawData, quality: value })
+              }
+            >
+              <SelectTrigger className="w-full h-11 bg-input border-primary/50">
+                <SelectValue>
+                  <div className="flex items-center gap-2">
+                    <span>{currentQuality}</span>
+                  </div>
+                </SelectValue>
+              </SelectTrigger>
+              <SelectContent>
+                {availableQualities.map((quality) => (
+                  <SelectItem key={quality} value={quality}>
+                    <div className="flex items-center gap-2">
+                      <span>{quality}</span>
                     </div>
                   </SelectItem>
                 ))}
