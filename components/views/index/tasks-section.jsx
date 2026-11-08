@@ -42,10 +42,12 @@ const TaskItem = memo(
       !selectionMode &&
       !isVideoModel(image.model) &&
       Boolean(image.src) &&
-      !image.error;
+      !image.error &&
+      !image.loadError;
     const errorMessage = getErrorMessage(image);
     const displayErrorMessage =
       errorMessage || (image.error ? "生成结果加载失败" : "");
+    const isLoadFailed = Boolean(image.src) && image.loadError && !image.error;
 
     return (
       <div
@@ -90,10 +92,35 @@ const TaskItem = memo(
         >
           {/* 图片/视频容器 - 固定宽高比 */}
           <div className="relative aspect-square bg-gray-100 dark:bg-gray-800">
-            {!image.error && image.src ? (
+            {isLoadFailed ? (
+              <div className="w-full h-full flex flex-col items-center justify-center p-3 text-center">
+                <div className="mb-2 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-amber-100 text-amber-600 dark:bg-amber-950/50 dark:text-amber-400">
+                  <svg
+                    className="h-5 w-5"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                    aria-hidden="true"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M12 9v4m0 4h.01M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"
+                    />
+                  </svg>
+                </div>
+                <span className="mb-1 text-xs font-medium text-amber-600 dark:text-amber-400">
+                  已生成，但无法加载
+                </span>
+                <span className="text-[11px] leading-4 text-gray-500 dark:text-gray-400">
+                  点击查看原因
+                </span>
+              </div>
+            ) : !image.error && image.src ? (
               isVideoModel(image.model) ? (
                 <video
-                  key={`video-${image.id}`}
+                  key={`video-${image.id}-${image.retryKey || 0}`}
                   src={image.src}
                   className={`cursor-pointer w-full h-full object-cover transition-opacity duration-300`}
                   onLoadedData={() => onImageLoad(index)}
@@ -104,6 +131,7 @@ const TaskItem = memo(
                 />
               ) : (
                 <img
+                  key={`img-${image.id}-${image.retryKey || 0}`}
                   src={image.src}
                   alt={image.alt}
                   draggable={false}
@@ -157,7 +185,7 @@ const TaskItem = memo(
             )}
 
             {/* 加载指示器 */}
-            {!image.loaded && !image.error && !image.finish && (
+            {!image.loaded && !image.error && !image.loadError && !image.finish && (
               <div className="absolute bottom-0 left-0 right-0 flex flex-col items-center justify-center bg-white/70 dark:bg-black/70 p-2 pointer-events-none">
                 {image.progress > 0 ? (
                   /* 进度条 */
@@ -192,6 +220,7 @@ const TaskItem = memo(
             {isVideoModel(image.model) &&
               image.src &&
               !image.error &&
+              !image.loadError &&
               !selectionMode && (
                 <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
                   <div className="bg-black/50 rounded-full p-3 backdrop-blur-sm">
@@ -246,6 +275,8 @@ const TaskItem = memo(
       prevProps.image.src === nextProps.image.src &&
       prevProps.image.loaded === nextProps.image.loaded &&
       prevProps.image.error === nextProps.image.error &&
+      prevProps.image.loadError === nextProps.image.loadError &&
+      prevProps.image.retryKey === nextProps.image.retryKey &&
       prevProps.image.failureReason === nextProps.image.failureReason &&
       prevProps.image.progress === nextProps.image.progress &&
       prevProps.image.finish === nextProps.image.finish &&
@@ -260,10 +291,31 @@ TaskItem.displayName = "TaskItem";
 
 // 图片/视频预览模态框组件 - 使用memo优化，避免父组件更新时重新渲染
 const ImagePreviewModal = memo(
-  ({ previewImage, onClose }) => {
+  ({ previewImage, onClose, onRetryLoad }) => {
+    const [copied, setCopied] = useState(false);
+
     if (!previewImage) return null;
 
     const isVideo = isVideoModel(previewImage.model);
+    const isLoadFailed =
+      Boolean(previewImage.src) &&
+      previewImage.loadError &&
+      !previewImage.error;
+
+    const copyLink = async () => {
+      try {
+        await navigator.clipboard.writeText(previewImage.src);
+      } catch {
+        const textarea = document.createElement("textarea");
+        textarea.value = previewImage.src;
+        document.body.appendChild(textarea);
+        textarea.select();
+        document.execCommand("copy");
+        document.body.removeChild(textarea);
+      }
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    };
     const errorMessage =
       typeof previewImage.error === "string" && previewImage.error.trim()
         ? previewImage.error.trim()
@@ -306,7 +358,81 @@ const ImagePreviewModal = memo(
             className="relative w-full max-w-4xl px-4"
             onClick={(e) => e.stopPropagation()}
           >
-            {isFailure ? (
+            {isLoadFailed ? (
+              <div className="mx-auto w-full max-w-lg rounded-xl bg-white p-6 shadow-2xl dark:bg-gray-800">
+                <div className="mb-4 flex items-center gap-3">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-amber-100 text-amber-600 dark:bg-amber-950/50 dark:text-amber-400">
+                    <svg
+                      className="h-6 w-6"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                      aria-hidden="true"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M12 9v4m0 4h.01M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"
+                      />
+                    </svg>
+                  </div>
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                    {isVideo ? "视频" : "图片"}已生成，但当前无法加载
+                  </h3>
+                </div>
+                <div className="mb-3 break-all text-xs text-gray-500 dark:text-gray-400">
+                  任务 ID：
+                  <span className="font-mono">{previewImage.id}</span>
+                </div>
+                <div className="rounded-lg bg-gray-50 p-4 text-sm leading-6 text-gray-700 dark:bg-gray-900 dark:text-gray-300">
+                  <p>
+                    任务已经生成成功，但您的浏览器无法访问结果地址。可能原因：
+                  </p>
+                  <ul className="mt-1 list-disc pl-5">
+                    <li>当前网络无法访问该存储域名（网络限制、防火墙或代理设置）</li>
+                    <li>链接已过期（内容有效期为 2 小时）</li>
+                  </ul>
+                  <p className="mt-2">
+                    建议切换网络或开启/关闭代理后点击“重新加载”，也可以复制链接到其他网络环境中打开下载。
+                  </p>
+                </div>
+                <div className="mt-3 break-all rounded-lg border border-gray-200 p-2 font-mono text-xs text-gray-500 dark:border-gray-700 dark:text-gray-400">
+                  {previewImage.src}
+                </div>
+                <div className="mt-5 flex flex-wrap justify-end gap-2">
+                  <button
+                    type="button"
+                    onClick={copyLink}
+                    className="rounded-lg bg-gray-200 px-4 py-2 text-sm font-medium text-gray-800 hover:bg-gray-300 dark:bg-gray-700 dark:text-gray-100 dark:hover:bg-gray-600"
+                  >
+                    {copied ? "已复制" : "复制链接"}
+                  </button>
+                  <a
+                    href={previewImage.src}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="rounded-lg bg-gray-200 px-4 py-2 text-sm font-medium text-gray-800 hover:bg-gray-300 dark:bg-gray-700 dark:text-gray-100 dark:hover:bg-gray-600"
+                  >
+                    新窗口打开
+                  </a>
+                  <button
+                    type="button"
+                    onClick={() => onRetryLoad(previewImage.id)}
+                    className="rounded-lg bg-blue-500 px-4 py-2 text-sm font-medium text-white hover:bg-blue-600"
+                  >
+                    重新加载
+                  </button>
+                  <button
+                    type="button"
+                    onClick={onClose}
+                    className="rounded-lg bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-700 dark:bg-gray-100 dark:text-gray-900 dark:hover:bg-white"
+                  >
+                    关闭
+                  </button>
+                </div>
+              </div>
+            ) : isFailure ? (
               <div className="mx-auto w-full max-w-lg rounded-xl bg-white p-6 shadow-2xl dark:bg-gray-800">
                 <div className="mb-4 flex items-center gap-3">
                   <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-red-100 text-red-500 dark:bg-red-950/50 dark:text-red-400">
@@ -379,9 +505,11 @@ const ImagePreviewModal = memo(
       prevProps.previewImage?.id === nextProps.previewImage?.id &&
       prevProps.previewImage?.src === nextProps.previewImage?.src &&
       prevProps.previewImage?.error === nextProps.previewImage?.error &&
+      prevProps.previewImage?.loadError === nextProps.previewImage?.loadError &&
       prevProps.previewImage?.failureReason ===
         nextProps.previewImage?.failureReason &&
-      prevProps.onClose === nextProps.onClose
+      prevProps.onClose === nextProps.onClose &&
+      prevProps.onRetryLoad === nextProps.onRetryLoad
     );
   }
 );
@@ -525,7 +653,16 @@ const Tasks = ({ tasks, setTasks }) => {
         // 优先使用新任务的数据，但保留未包含在新tasks中的旧图片
         const combinedImages = [
           // 首先添加新的任务
-          ...updatedImages,
+          ...updatedImages.map((img) => {
+            const existing = existingImagesMap.get(img.id);
+            return existing && existing.src === img.src
+              ? {
+                  ...img,
+                  loadError: existing.loadError,
+                  retryKey: existing.retryKey,
+                }
+              : img;
+          }),
           // 然后添加旧的、不在新任务中的图片
           ...prevImages.filter(
             (img) => !tasks.some((task) => task.id === img.id)
@@ -590,9 +727,29 @@ const Tasks = ({ tasks, setTasks }) => {
 
   const handleImageError = (index) => {
     setImages((prev) =>
-      prev.map((img, i) => (i === index ? { ...img, error: true } : img))
+      prev.map((img, i) => (i === index ? { ...img, loadError: true } : img))
     );
   };
+
+  const retryImageLoad = useCallback((imageId) => {
+    setImages((prev) =>
+      prev.map((img) =>
+        img.id === imageId
+          ? {
+              ...img,
+              loadError: false,
+              loaded: false,
+              retryKey: (img.retryKey || 0) + 1,
+            }
+          : img
+      )
+    );
+    setPreviewImage(null);
+    if (typeof document !== "undefined") {
+      document.documentElement.style.overflow = "";
+      document.body.style.overflow = "";
+    }
+  }, []);
 
   // 获取错误消息
   const getErrorMessage = (task) => {
@@ -1028,6 +1185,7 @@ const Tasks = ({ tasks, setTasks }) => {
           <ImagePreviewModal
             previewImage={previewImage}
             onClose={closePreview}
+            onRetryLoad={retryImageLoad}
           />,
           document.body
         )}
