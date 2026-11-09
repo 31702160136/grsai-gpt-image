@@ -15,9 +15,14 @@ import {
 const ApiKeyButtons = () => {
   const [apiKey, setApiKey] = useState("");
   const [open, setOpen] = useState(false);
+  const [siteUrl, setSiteUrl] = useState("https://grsai.ai/api-keys");
 
   // Load API key from localStorage on component mount
   useEffect(() => {
+    if (window.location.hostname.endsWith(".com")) {
+      setSiteUrl("https://grsai.com/api-keys");
+    }
+
     const savedApiKey = localStorage.getItem("apikey");
     if (savedApiKey) {
       setApiKey(savedApiKey);
@@ -37,7 +42,7 @@ const ApiKeyButtons = () => {
 
   return (
     <div className="flex gap-2">
-      <Link href="https://grsai.ai" target="_blank">
+      <Link href={siteUrl} target="_blank">
         <Button variant="outline">获取APIKEY</Button>
       </Link>
 
