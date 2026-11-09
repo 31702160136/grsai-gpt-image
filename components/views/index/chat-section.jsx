@@ -319,6 +319,15 @@ const MODEL_QUALITY_MAP = {
 
 const getAvailableQualities = (model) => MODEL_QUALITY_MAP[model] || [];
 
+const MODEL_OUTPUT_FORMAT_MAP = {
+  "gpt-image-2.6": ["png", "gif", "svg"],
+  "gpt-image-2.6-flare": ["png", "gif"],
+  "gpt-image-2.6-sunburst": ["png", "gif"],
+};
+
+const getAvailableOutputFormats = (model) =>
+  MODEL_OUTPUT_FORMAT_MAP[model] || [];
+
 // 像素尺寸对应的展示标签（比例、K 等级）
 const SIZE_LABEL_MAP = {
   "gpt-image-2": {
@@ -455,6 +464,19 @@ const Home = ({
 
     setDrawData((prev) => ({ ...prev, quality: currentQuality }));
   }, [currentQuality, drawData.quality, setDrawData]);
+
+  const availableOutputFormats = getAvailableOutputFormats(drawData.model);
+  const currentOutputFormat = availableOutputFormats.includes(
+    drawData.outputFormat,
+  )
+    ? drawData.outputFormat
+    : availableOutputFormats[0];
+
+  useEffect(() => {
+    if (drawData.outputFormat === currentOutputFormat) return;
+
+    setDrawData((prev) => ({ ...prev, outputFormat: currentOutputFormat }));
+  }, [currentOutputFormat, drawData.outputFormat, setDrawData]);
 
   const handleFrameUpload = (file, field) => {
     if (!file) return;
@@ -605,6 +627,10 @@ const Home = ({
     newData.quality = availableQualities.includes(drawData.quality)
       ? drawData.quality
       : availableQualities[0];
+    const availableOutputFormats = getAvailableOutputFormats(newModel);
+    newData.outputFormat = availableOutputFormats.includes(drawData.outputFormat)
+      ? drawData.outputFormat
+      : availableOutputFormats[0];
 
     setDrawData(newData);
   };
@@ -1156,6 +1182,36 @@ const Home = ({
                   <SelectItem key={quality} value={quality}>
                     <div className="flex items-center gap-2">
                       <span>{quality}</span>
+                    </div>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        )}
+        {availableOutputFormats.length > 0 && (
+          <div className="mb-3">
+            <div className="text-sm font-medium mb-2 text-foreground">
+              outputFormat参数
+            </div>
+            <Select
+              value={currentOutputFormat}
+              onValueChange={(value) =>
+                setDrawData({ ...drawData, outputFormat: value })
+              }
+            >
+              <SelectTrigger className="w-full h-11 bg-input border-primary/50">
+                <SelectValue>
+                  <div className="flex items-center gap-2">
+                    <span>{currentOutputFormat}</span>
+                  </div>
+                </SelectValue>
+              </SelectTrigger>
+              <SelectContent>
+                {availableOutputFormats.map((outputFormat) => (
+                  <SelectItem key={outputFormat} value={outputFormat}>
+                    <div className="flex items-center gap-2">
+                      <span>{outputFormat}</span>
                     </div>
                   </SelectItem>
                 ))}

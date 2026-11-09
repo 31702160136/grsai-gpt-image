@@ -250,6 +250,9 @@ const GenerateSection = () => {
       if (drawData.quality) {
         requestData.quality = drawData.quality;
       }
+      if (drawData.outputFormat) {
+        requestData.outputFormat = drawData.outputFormat;
+      }
       if (drawData.background) {
         requestData.background = drawData.background;
       }
