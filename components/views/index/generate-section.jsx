@@ -23,12 +23,14 @@ const AGNES_VIDEO_MODELS = [
   "agnes-video-2.5-flash",
   WAN_VIDEO_MODEL,
 ];
+const FRAME_VIDEO_MODELS = [MINIMAX_H3_MODEL, ...AGNES_VIDEO_MODELS];
 const MAX_SEED = 2147483647;
 
 const isNanoBananaModel = (model) =>
   model?.startsWith(NANO_BANANA_MODEL_PREFIX);
 const isVideoModel = (model) => VIDEO_MODELS.includes(model);
 const isAgnesVideoModel = (model) => AGNES_VIDEO_MODELS.includes(model);
+const isFrameVideoModel = (model) => FRAME_VIDEO_MODELS.includes(model);
 const createRandomSeed = () => Math.floor(Math.random() * (MAX_SEED + 1));
 
 const GenerateSection = () => {
@@ -226,13 +228,15 @@ const GenerateSection = () => {
         requestData.seed =
           drawData.seed === 0 ? createRandomSeed() : drawData.seed;
       }
-      if (isAgnesVideoModel(drawData.model)) {
+      if (isFrameVideoModel(drawData.model)) {
         if (drawData.firstFrame) {
           requestData.firstFrame = drawData.firstFrame;
         }
         if (drawData.lastFrame) {
           requestData.lastFrame = drawData.lastFrame;
         }
+      }
+      if (isAgnesVideoModel(drawData.model)) {
         const referenceVideo = drawData.videos?.[0];
         if (referenceVideo?.url?.trim()) {
           requestData.videos = [

@@ -29,6 +29,7 @@ const AGNES_VIDEO_MODELS = [
   AGNES_VIDEO_FLASH_MODEL,
   WAN_VIDEO_MODEL,
 ];
+const FRAME_VIDEO_MODELS = [MINIMAX_H3_MODEL, ...AGNES_VIDEO_MODELS];
 const SHOW_MINIMAX_H3_MODEL = true;
 const SHOW_AGNES_VIDEO_MODELS = true;
 const SHOW_AGNES_VIDEO_FLASH_MODEL = false;
@@ -421,6 +422,7 @@ const Home = ({
   const [referenceImageDropIndex, setReferenceImageDropIndex] = useState(null);
   const isVideoModel = VIDEO_MODELS.includes(drawData.model);
   const isAgnesVideoModel = AGNES_VIDEO_MODELS.includes(drawData.model);
+  const isFrameVideoModel = FRAME_VIDEO_MODELS.includes(drawData.model);
   const availableResolutions = VIDEO_RESOLUTION_MAP[drawData.model] || [];
 
   useEffect(() => {
@@ -612,9 +614,11 @@ const Home = ({
       newData.audios = drawData.audios || [];
       newData.seed = drawData.seed ?? 0;
     }
-    if (AGNES_VIDEO_MODELS.includes(newModel)) {
+    if (FRAME_VIDEO_MODELS.includes(newModel)) {
       newData.firstFrame = drawData.firstFrame || "";
       newData.lastFrame = drawData.lastFrame || "";
+    }
+    if (AGNES_VIDEO_MODELS.includes(newModel)) {
       newData.videos = SHOW_AGNES_REFERENCE_VIDEO ? drawData.videos || [] : [];
     }
     if (IMAGE_SIZE_MODELS.includes(newModel)) {
@@ -1303,7 +1307,7 @@ const Home = ({
                 输入 0 将随机生成 Seed，输入 1~2147483647 可固定生成结果
               </p>
             </div>
-            {isAgnesVideoModel && (
+            {isFrameVideoModel && (
               <>
                 <div className="mb-3 rounded-lg border border-primary/30 p-3">
                   <div className="mb-3">
@@ -1385,7 +1389,7 @@ const Home = ({
                   </div>
                 </div>
 
-                {SHOW_AGNES_REFERENCE_VIDEO && (
+                {SHOW_AGNES_REFERENCE_VIDEO && isAgnesVideoModel && (
                   <div className="mb-3 rounded-lg border border-primary/30 p-3">
                     <div className="mb-3 flex items-center justify-between gap-2">
                       <div>
