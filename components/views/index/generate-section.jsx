@@ -2,6 +2,7 @@
 import Tasks from "./tasks-section";
 import ChatSection from "./chat-section";
 import { useState, useEffect, useRef } from "react";
+import { sanitizeApiKey, isValidApiKey } from "@/components/api-key-buttons";
 
 const DEFAULT_SPLIT_PERCENT = 55;
 const MIN_PANE_WIDTH = 300;
@@ -152,7 +153,7 @@ const GenerateSection = () => {
   };
 
   const getAPIKEY = () => {
-    const savedApiKey = localStorage.getItem("apikey");
+    const savedApiKey = sanitizeApiKey(localStorage.getItem("apikey"));
     return savedApiKey || process.env.API_KEY;
   };
 
@@ -160,8 +161,13 @@ const GenerateSection = () => {
     if (isGenerate) {
       return;
     }
-    if (!getAPIKEY()) {
+    const apiKey = getAPIKEY();
+    if (!apiKey) {
       alert("请先设置APIKEY");
+      return;
+    }
+    if (!isValidApiKey(apiKey)) {
+      alert("API Key 包含非法字符（如中文、全角符号），请重新设置APIKEY");
       return;
     }
     setIsGenerate(true);

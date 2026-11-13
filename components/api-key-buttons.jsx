@@ -12,6 +12,12 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 
+// HTTP header values must be ISO-8859-1; strip whitespace and invisible chars often pasted with the key
+export const sanitizeApiKey = (key) =>
+  (key || "").replace(/[\s\u200B-\u200D\u2060\uFEFF\u3000]/g, "");
+
+export const isValidApiKey = (key) => /^[\x21-\x7E]+$/.test(key);
+
 const ApiKeyButtons = () => {
   const [apiKey, setApiKey] = useState("");
   const [open, setOpen] = useState(false);
@@ -30,7 +36,13 @@ const ApiKeyButtons = () => {
   }, []);
 
   const handleSaveApiKey = () => {
-    localStorage.setItem("apikey", apiKey);
+    const key = sanitizeApiKey(apiKey);
+    if (key && !isValidApiKey(key)) {
+      alert("API Key 包含非法字符（如中文、全角符号），请重新复制正确的 API Key");
+      return;
+    }
+    localStorage.setItem("apikey", key);
+    setApiKey(key);
     setOpen(false);
   };
 
