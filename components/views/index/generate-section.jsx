@@ -8,7 +8,7 @@ const DEFAULT_SPLIT_PERCENT = 55;
 const MIN_PANE_WIDTH = 300;
 const RESIZER_WIDTH = 16;
 const API_BASE_URL = "https://grsai.dakka.com.cn";
-// const API_BASE_URL = "http://115.231.176.233:13051";
+// const API_BASE_URL = "http://127.0.0.1:13002";
 const NANO_BANANA_MODEL_PREFIX = "nano-banana";
 const MINIMAX_H3_MODEL = "minimax-h3";
 const VIDEO_MODELS = [
@@ -26,11 +26,13 @@ const AGNES_VIDEO_MODELS = [
 ];
 const FRAME_VIDEO_MODELS = [MINIMAX_H3_MODEL, ...AGNES_VIDEO_MODELS];
 const MAX_SEED = 2147483647;
+const REFERENCE_VIDEO_MODELS = [AGNES_VIDEO_MODEL, WAN_VIDEO_MODEL];
+const MAX_REFERENCE_VIDEOS = 5;
 
 const isNanoBananaModel = (model) =>
   model?.startsWith(NANO_BANANA_MODEL_PREFIX);
 const isVideoModel = (model) => VIDEO_MODELS.includes(model);
-const isAgnesVideoModel = (model) => AGNES_VIDEO_MODELS.includes(model);
+const isReferenceVideoModel = (model) => REFERENCE_VIDEO_MODELS.includes(model);
 const isFrameVideoModel = (model) => FRAME_VIDEO_MODELS.includes(model);
 const createRandomSeed = () => Math.floor(Math.random() * (MAX_SEED + 1));
 
@@ -206,14 +208,23 @@ const GenerateSection = () => {
         ) {
           throw new Error(`Seed 必须是 0~${MAX_SEED} 之间的整数`);
         }
-        const referenceVideo = drawData.videos?.[0];
         if (
-          isAgnesVideoModel(drawData.model) &&
-          referenceVideo?.url?.trim() &&
-          (!Number.isFinite(Number(referenceVideo.startSeconds)) ||
-            Number(referenceVideo.startSeconds) < 0)
+          isReferenceVideoModel(drawData.model) &&
+          (drawData.videos?.length || 0) > MAX_REFERENCE_VIDEOS
         ) {
-          throw new Error("参考视频开头秒数必须是大于或等于 0 的数字");
+          throw new Error(`参考视频最多 ${MAX_REFERENCE_VIDEOS} 个`);
+        }
+        if (
+          drawData.model === AGNES_VIDEO_MODEL &&
+          (drawData.videos || []).some(
+            (video) =>
+              video?.url?.trim() &&
+              (video.startSeconds === "" ||
+                !Number.isFinite(Number(video.startSeconds ?? 0)) ||
+                Number(video.startSeconds ?? 0) < 0),
+          )
+        ) {
+          throw new Error("参考视频开始秒数必须是大于或等于 0 的数字");
         }
       }
 
@@ -242,16 +253,21 @@ const GenerateSection = () => {
           requestData.lastFrame = drawData.lastFrame;
         }
       }
-      if (isAgnesVideoModel(drawData.model)) {
-        const referenceVideo = drawData.videos?.[0];
-        if (referenceVideo?.url?.trim()) {
-          requestData.videos = [
-            {
-              url: referenceVideo.url.trim(),
-              startSeconds: Number(referenceVideo.startSeconds),
-              requireAudio: Boolean(referenceVideo.requireAudio),
-            },
-          ];
+      if (isReferenceVideoModel(drawData.model)) {
+        const videos = (drawData.videos || [])
+          .filter((video) => video?.url?.trim())
+          .slice(0, MAX_REFERENCE_VIDEOS)
+          .map((video) =>
+            drawData.model === AGNES_VIDEO_MODEL
+              ? {
+                  url: video.url.trim(),
+                  startSeconds: Number(video.startSeconds ?? 0),
+                  requireAudio: Boolean(video.requireAudio),
+                }
+              : { url: video.url.trim() },
+          );
+        if (videos.length > 0) {
+          requestData.videos = videos;
         }
       }
       if (isNanoBananaModel(drawData.model) && drawData.imageSize) {

@@ -33,7 +33,17 @@ const FRAME_VIDEO_MODELS = [MINIMAX_H3_MODEL, ...AGNES_VIDEO_MODELS];
 const SHOW_MINIMAX_H3_MODEL = true;
 const SHOW_AGNES_VIDEO_MODELS = true;
 const SHOW_AGNES_VIDEO_FLASH_MODEL = false;
-const SHOW_AGNES_REFERENCE_VIDEO = false;
+const REFERENCE_VIDEO_MODELS = [AGNES_VIDEO_MODEL, WAN_VIDEO_MODEL];
+const REFERENCE_VIDEO_OPTION_MODELS = [AGNES_VIDEO_MODEL];
+const MAX_REFERENCE_VIDEOS = 5;
+const normalizeReferenceVideo = (model, video) =>
+  REFERENCE_VIDEO_OPTION_MODELS.includes(model)
+    ? {
+        url: video.url,
+        startSeconds: video.startSeconds ?? 0,
+        requireAudio: video.requireAudio ?? false,
+      }
+    : { url: video.url };
 const AGNES_ASPECT_RATIOS = ["16:9", "9:16", "21:9", "4:3", "1:1", "3:4"];
 const VIDEO_RESOLUTION_MAP = {
   [MINIMAX_H3_MODEL]: ["480p", "768p", "1080p"],
@@ -417,11 +427,16 @@ const Home = ({
 }) => {
   const [uploading, setUploading] = useState(false);
   const [audioUrl, setAudioUrl] = useState("");
+  const [videoUrl, setVideoUrl] = useState("");
   const [draggedReferenceImageIndex, setDraggedReferenceImageIndex] =
     useState(null);
   const [referenceImageDropIndex, setReferenceImageDropIndex] = useState(null);
   const isVideoModel = VIDEO_MODELS.includes(drawData.model);
-  const isAgnesVideoModel = AGNES_VIDEO_MODELS.includes(drawData.model);
+  const isReferenceVideoModel = REFERENCE_VIDEO_MODELS.includes(drawData.model);
+  const hasReferenceVideoOptions = REFERENCE_VIDEO_OPTION_MODELS.includes(
+    drawData.model,
+  );
+  const referenceVideos = isReferenceVideoModel ? drawData.videos || [] : [];
   const isFrameVideoModel = FRAME_VIDEO_MODELS.includes(drawData.model);
   const availableResolutions = VIDEO_RESOLUTION_MAP[drawData.model] || [];
 
@@ -511,39 +526,50 @@ const Home = ({
     reader.readAsDataURL(file);
   };
 
-  const updateReferenceVideo = (changes) => {
+  const updateReferenceVideo = (index, changes) => {
     setDrawData((prev) => ({
       ...prev,
-      videos: [
-        {
-          url: "",
-          startSeconds: 0,
-          requireAudio: false,
-          ...(prev.videos?.[0] || {}),
-          ...changes,
-        },
-      ],
+      videos: (prev.videos || []).map((video, i) =>
+        i === index ? { ...video, ...changes } : video,
+      ),
     }));
   };
 
-  const handleReferenceVideoUpload = (file) => {
-    if (!file) return;
-    if (!file.type.startsWith("video/")) {
+  const addReferenceVideos = (urls) => {
+    setDrawData((prev) => {
+      const videos = prev.videos || [];
+      const remaining = MAX_REFERENCE_VIDEOS - videos.length;
+      if (remaining <= 0) return prev;
+      return {
+        ...prev,
+        videos: [
+          ...videos,
+          ...urls
+            .slice(0, remaining)
+            .map((url) => normalizeReferenceVideo(prev.model, { url })),
+        ],
+      };
+    });
+  };
+
+  const handleReferenceVideoUpload = (event) => {
+    const files = Array.from(event.target.files || []);
+    if (files.length === 0) return;
+    if (referenceVideos.length + files.length > MAX_REFERENCE_VIDEOS) {
+      alert(`最多只能添加${MAX_REFERENCE_VIDEOS}个参考视频`);
+      return;
+    }
+    if (files.some((file) => !file.type.startsWith("video/"))) {
       alert("请选择有效的视频文件");
       return;
     }
 
-    setUploading(true);
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      updateReferenceVideo({ url: event.target.result });
-      setUploading(false);
-    };
-    reader.onerror = () => {
-      setUploading(false);
-      alert("读取参考视频失败");
-    };
-    reader.readAsDataURL(file);
+    files.forEach((file) => {
+      const reader = new FileReader();
+      reader.onload = (e) => addReferenceVideos([e.target.result]);
+      reader.onerror = () => alert(`读取视频 ${file.name} 失败`);
+      reader.readAsDataURL(file);
+    });
   };
 
   const handleReferenceImageDrop = (event, targetIndex) => {
@@ -618,8 +644,14 @@ const Home = ({
       newData.firstFrame = drawData.firstFrame || "";
       newData.lastFrame = drawData.lastFrame || "";
     }
-    if (AGNES_VIDEO_MODELS.includes(newModel)) {
-      newData.videos = SHOW_AGNES_REFERENCE_VIDEO ? drawData.videos || [] : [];
+    if (REFERENCE_VIDEO_MODELS.includes(newModel)) {
+      newData.videos = REFERENCE_VIDEO_MODELS.includes(drawData.model)
+        ? (drawData.videos || []).map((video) =>
+            normalizeReferenceVideo(newModel, video),
+          )
+        : [];
+    } else if (AGNES_VIDEO_MODELS.includes(newModel)) {
+      newData.videos = [];
     }
     if (IMAGE_SIZE_MODELS.includes(newModel)) {
       const availableImageSizes = getAvailableImageSizes(newModel);
@@ -1389,103 +1421,143 @@ const Home = ({
                   </div>
                 </div>
 
-                {SHOW_AGNES_REFERENCE_VIDEO && isAgnesVideoModel && (
+                {isReferenceVideoModel && (
                   <div className="mb-3 rounded-lg border border-primary/30 p-3">
-                    <div className="mb-3 flex items-center justify-between gap-2">
-                      <div>
-                        <div className="text-sm font-medium text-foreground">
-                          参考视频
-                        </div>
-                        <p className="mt-1 text-xs text-muted-foreground">
-                          支持上传视频、视频链接或 Base64，最多 1 个
-                        </p>
-                      </div>
-                      {drawData.videos?.[0]?.url && (
-                        <Button
-                          type="button"
-                          variant="outline"
-                          className="h-9 shrink-0"
-                          onClick={() =>
-                            setDrawData((prev) => ({ ...prev, videos: [] }))
-                          }
-                        >
-                          删除
-                        </Button>
-                      )}
+                    <div className="flex items-center justify-between gap-2 mb-2">
+                      <span className="text-sm font-medium text-foreground">
+                        参考视频
+                      </span>
+                      <span className="text-xs text-muted-foreground">
+                        {referenceVideos.length}/{MAX_REFERENCE_VIDEOS}
+                      </span>
                     </div>
-                    {drawData.videos?.[0]?.url && (
-                      <video
-                        controls
-                        preload="metadata"
-                        src={drawData.videos[0].url}
-                        className="mb-3 max-h-56 w-full rounded-md border border-border bg-black"
-                      />
+                    {referenceVideos.length > 0 && (
+                      <div className="space-y-2 mb-3">
+                        {referenceVideos.map((video, index) => (
+                          <div
+                            key={`${video.url.slice(0, 32)}-${index}`}
+                            className="rounded-md border border-border/60 p-2"
+                          >
+                            <div className="flex items-center gap-2">
+                              <video
+                                controls
+                                preload="metadata"
+                                src={video.url}
+                                className="max-h-40 min-w-0 flex-1 rounded-md border border-border bg-black"
+                              />
+                              <Button
+                                type="button"
+                                variant="outline"
+                                className="h-9 shrink-0"
+                                onClick={() =>
+                                  setDrawData((prev) => ({
+                                    ...prev,
+                                    videos: prev.videos.filter(
+                                      (_, i) => i !== index,
+                                    ),
+                                  }))
+                                }
+                              >
+                                删除
+                              </Button>
+                            </div>
+                            {hasReferenceVideoOptions && (
+                              <div className="mt-2 grid grid-cols-1 gap-3 sm:grid-cols-2">
+                                <div>
+                                  <label
+                                    htmlFor={`reference-video-start-seconds-${index}`}
+                                    className="mb-2 block text-sm font-medium text-foreground"
+                                  >
+                                    从指定秒数开始读取
+                                  </label>
+                                  <Input
+                                    id={`reference-video-start-seconds-${index}`}
+                                    type="number"
+                                    min={0}
+                                    step="any"
+                                    value={video.startSeconds ?? 0}
+                                    onChange={(event) =>
+                                      updateReferenceVideo(index, {
+                                        startSeconds: event.target.value,
+                                      })
+                                    }
+                                    className="h-11 bg-input border-primary/50"
+                                  />
+                                </div>
+                                <div>
+                                  <div className="mb-2 text-sm font-medium text-foreground">
+                                    必须包含音轨
+                                  </div>
+                                  <Select
+                                    value={String(video.requireAudio ?? false)}
+                                    onValueChange={(value) =>
+                                      updateReferenceVideo(index, {
+                                        requireAudio: value === "true",
+                                      })
+                                    }
+                                  >
+                                    <SelectTrigger className="h-11 w-full bg-input border-primary/50">
+                                      <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      <SelectItem value="false">否</SelectItem>
+                                      <SelectItem value="true">是</SelectItem>
+                                    </SelectContent>
+                                  </Select>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
                     )}
                     <Input
                       type="file"
                       accept="video/*"
-                      disabled={uploading}
+                      multiple
+                      disabled={referenceVideos.length >= MAX_REFERENCE_VIDEOS}
                       onChange={(event) => {
-                        handleReferenceVideoUpload(event.target.files?.[0]);
+                        handleReferenceVideoUpload(event);
                         event.target.value = "";
                       }}
-                      className="mb-2 h-11 bg-input border-primary/50"
+                      className="h-11 bg-input border-primary/50"
                     />
-                    <Input
-                      type="text"
-                      value={drawData.videos?.[0]?.url || ""}
-                      placeholder="或输入视频链接 / Base64"
-                      onChange={(event) =>
-                        updateReferenceVideo({ url: event.target.value })
-                      }
-                      className="mb-3 h-11 bg-input border-primary/50"
-                    />
-                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                      <div>
-                        <label
-                          htmlFor="reference-video-start-seconds"
-                          className="mb-2 block text-sm font-medium text-foreground"
-                        >
-                          从参考视频的指定秒数开始读取
-                        </label>
-                        <Input
-                          id="reference-video-start-seconds"
-                          type="number"
-                          min={0}
-                          step="any"
-                          value={drawData.videos?.[0]?.startSeconds ?? 0}
-                          onChange={(event) =>
-                            updateReferenceVideo({
-                              startSeconds: event.target.value,
-                            })
+                    <div className="flex flex-col sm:flex-row gap-2 mt-2">
+                      <Input
+                        type="url"
+                        value={videoUrl}
+                        placeholder="或输入视频 URL"
+                        disabled={referenceVideos.length >= MAX_REFERENCE_VIDEOS}
+                        onChange={(event) => setVideoUrl(event.target.value)}
+                        className="h-11 flex-1 bg-input border-primary/50"
+                      />
+                      <Button
+                        type="button"
+                        variant="outline"
+                        disabled={
+                          !videoUrl.trim() ||
+                          referenceVideos.length >= MAX_REFERENCE_VIDEOS
+                        }
+                        onClick={() => {
+                          try {
+                            const url = new URL(videoUrl.trim());
+                            if (!["http:", "https:"].includes(url.protocol)) {
+                              throw new Error();
+                            }
+                            addReferenceVideos([url.toString()]);
+                            setVideoUrl("");
+                          } catch {
+                            alert("请输入有效的 HTTP(S) 视频链接");
                           }
-                          className="h-11 bg-input border-primary/50"
-                        />
-                      </div>
-                      <div>
-                        <div className="mb-2 text-sm font-medium text-foreground">
-                          是否参考音轨
-                        </div>
-                        <Select
-                          value={String(
-                            drawData.videos?.[0]?.requireAudio ?? false,
-                          )}
-                          onValueChange={(value) =>
-                            updateReferenceVideo({
-                              requireAudio: value === "true",
-                            })
-                          }
-                        >
-                          <SelectTrigger className="h-11 w-full bg-input border-primary/50">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="false">否</SelectItem>
-                            <SelectItem value="true">是</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
+                        }}
+                      >
+                        添加链接
+                      </Button>
                     </div>
+                    <p className="mt-2 text-xs text-muted-foreground">
+                      支持 Base64 文件或 URL，最多 {MAX_REFERENCE_VIDEOS}{" "}
+                      个视频
+                    </p>
                   </div>
                 )}
               </>
